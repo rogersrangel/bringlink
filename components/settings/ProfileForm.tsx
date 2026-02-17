@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Save, Loader2, Check, X } from "lucide-react"
 
@@ -8,18 +8,24 @@ interface ProfileFormProps {
   initialData: {
     display_name: string
     username: string
-    bio: string | null
-    location: string | null
+    bio: string
+    location: string
   }
   onSubmit: (data: any) => Promise<void>
   onCheckUsername: (username: string) => Promise<boolean>
+  isSaving?: boolean
 }
 
-export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileFormProps) {
+export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }: ProfileFormProps) {
   const [formData, setFormData] = useState(initialData)
   const [loading, setLoading] = useState(false)
   const [checkingUsername, setCheckingUsername] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+
+  // Atualizar quando initialData mudar (depois de salvar)
+  useEffect(() => {
+    setFormData(initialData)
+  }, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -43,14 +49,26 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileF
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  e.preventDefault()
+  setLoading(true)
+  
+  // LOG PARA VER O QUE ESTÁ SENDO ENVIADO
+  console.log("📤 ProfileForm - Dados enviados:", formData)
+  
+  try {
     await onSubmit(formData)
-    setLoading(false)
+    console.log("✅ ProfileForm - onSubmit concluído")
+  } catch (error) {
+    console.error("❌ ProfileForm - Erro no onSubmit:", error)
   }
+  
+  setLoading(false)
+}
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <h3 className="text-lg font-medium">Informações do Perfil</h3>
+
       {/* Nome de exibição */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -85,7 +103,12 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileF
               required
               className="w-full pl-8 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
-            {usernameAvailable !== null && (
+            {checkingUsername && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <Loader2 size={18} className="animate-spin text-gray-400" />
+              </div>
+            )}
+            {!checkingUsername && usernameAvailable !== null && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 {usernameAvailable ? (
                   <Check size={18} className="text-green-500" />
@@ -99,7 +122,7 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileF
           <button
             type="button"
             onClick={checkUsername}
-            disabled={checkingUsername}
+            disabled={checkingUsername || !formData.username}
             className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {checkingUsername ? "Verificando..." : "Verificar"}
@@ -119,7 +142,7 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileF
         </label>
         <textarea
           name="bio"
-          value={formData.bio || ''}
+          value={formData.bio}
           onChange={handleChange}
           rows={4}
           className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -135,7 +158,7 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileF
         <input
           type="text"
           name="location"
-          value={formData.location || ''}
+          value={formData.location}
           onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           placeholder="Cidade, Estado"
@@ -145,17 +168,17 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername }: ProfileF
       {/* Botão salvar */}
       <motion.button
         type="submit"
-        disabled={loading || usernameAvailable === false}
-        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50"
+        disabled={loading || isSaving || usernameAvailable === false}
+        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        {loading ? (
+        {(loading || isSaving) ? (
           <Loader2 size={18} className="animate-spin" />
         ) : (
           <Save size={18} />
         )}
-        {loading ? "Salvando..." : "Salvar alterações"}
+        {(loading || isSaving) ? "Salvando..." : "Salvar alterações"}
       </motion.button>
     </form>
   )

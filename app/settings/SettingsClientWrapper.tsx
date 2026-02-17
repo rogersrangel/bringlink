@@ -3,6 +3,8 @@
 import { ProfileForm } from "@/components/settings/ProfileForm"
 import { SocialLinks } from "@/components/settings/SocialLinks"
 import { AvatarUpload } from "@/components/settings/AvatarUpload"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface SettingsClientWrapperProps {
   profile: any
@@ -17,6 +19,35 @@ export function SettingsClientWrapper({
   onUpdateSocial,
   onCheckUsername 
 }: SettingsClientWrapperProps) {
+  const router = useRouter()
+  const [isSaving, setIsSaving] = useState(false)
+
+ const handleProfileSubmit = async (data: any) => {
+  console.log("📥 SettingsClientWrapper - Recebido:", data)
+  setIsSaving(true)
+  try {
+    const result = await onUpdateProfile(data)
+    console.log("📤 SettingsClientWrapper - Resultado da Server Action:", result)
+    router.refresh()
+  } catch (error) {
+    console.error("❌ SettingsClientWrapper - Erro:", error)
+  } finally {
+    setIsSaving(false)
+  }
+}
+
+  const handleSocialSubmit = async (data: any) => {
+    setIsSaving(true)
+    try {
+      await onUpdateSocial(data)
+      router.refresh()
+    } catch (error) {
+      console.error("Erro ao salvar redes sociais:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Avatar */}
@@ -37,11 +68,12 @@ export function SettingsClientWrapper({
           initialData={{
             display_name: profile.display_name,
             username: profile.username,
-            bio: profile.bio,
-            location: profile.location
+            bio: profile.bio || "",
+            location: profile.location || ""
           }}
-          onSubmit={onUpdateProfile}
+          onSubmit={handleProfileSubmit}
           onCheckUsername={onCheckUsername}
+          isSaving={isSaving}
         />
       </div>
 
@@ -49,12 +81,13 @@ export function SettingsClientWrapper({
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <SocialLinks 
           initialData={{
-            instagram: profile.instagram,
-            youtube: profile.youtube,
-            tiktok: profile.tiktok,
-            website: profile.website
+            instagram: profile.instagram || "",
+            youtube: profile.youtube || "",
+            tiktok: profile.tiktok || "",
+            website: profile.website || ""
           }}
-          onSubmit={onUpdateSocial}
+          onSubmit={handleSocialSubmit}
+          isSaving={isSaving}
         />
       </div>
     </div>

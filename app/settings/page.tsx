@@ -23,27 +23,47 @@ export default async function SettingsPage() {
     notFound()
   }
 
-  async function updateProfile(formData: any) {
-    "use server"
-    
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+ async function updateProfile(formData: any) {
+  "use server"
+  
+  console.log("🖥️ Server Action - Recebido:", formData)
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) return
-
-    await supabase
-      .from('profiles')
-      .update({
-        display_name: formData.display_name,
-        username: formData.username,
-        bio: formData.bio || null,
-        location: formData.location || null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-
-    revalidatePath('/settings')
+  if (!user) {
+    console.log("🖥️ Server Action - Usuário não autenticado")
+    return { error: "Não autorizado" }
   }
+
+  console.log("🖥️ Server Action - User ID:", user.id)
+  console.log("🖥️ Server Action - Dados para update:", {
+    display_name: formData.display_name,
+    username: formData.username,
+    bio: formData.bio,
+    location: formData.location
+  })
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      display_name: formData.display_name,
+      username: formData.username,
+      bio: formData.bio || null,
+      location: formData.location || null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    console.error("🖥️ Server Action - Erro no Supabase:", error)
+    return { error: error.message }
+  }
+
+  console.log("🖥️ Server Action - Sucesso!")
+  revalidatePath('/settings')
+  return { success: true }
+}
 
   async function updateSocialLinks(formData: any) {
     "use server"
