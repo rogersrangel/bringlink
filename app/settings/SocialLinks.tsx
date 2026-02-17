@@ -15,8 +15,17 @@ interface SocialLinksProps {
 }
 
 export function SocialLinks({ initialData, onSubmit }: SocialLinksProps) {
-  const [links, setLinks] = useState(initialData)
+  const [links, setLinks] = useState({
+    instagram: initialData.instagram || '',
+    youtube: initialData.youtube || '',
+    tiktok: initialData.tiktok || '',
+    website: initialData.website || ''
+  })
   const [loading, setLoading] = useState(false)
+
+  const handleChange = (key: string, value: string) => {
+    setLinks(prev => ({ ...prev, [key]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,8 +52,8 @@ export function SocialLinks({ initialData, onSubmit }: SocialLinksProps) {
             <Icon size={20} className={social.color} />
             <input
               type="text"
-              value={links[social.key as keyof typeof links] || ''}
-              onChange={(e) => setLinks({ ...links, [social.key]: e.target.value })}
+              value={links[social.key as keyof typeof links]}
+              onChange={(e) => handleChange(social.key, e.target.value)}
               placeholder={social.placeholder}
               className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
