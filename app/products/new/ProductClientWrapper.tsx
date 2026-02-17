@@ -14,16 +14,11 @@ export function ProductClientWrapper({ categories, onSubmit }: ProductClientWrap
 
   const handleProductFetched = (data: any) => {
     setScrapedData(data)
-    // Aqui você pode preencher o formulário com os dados
-    console.log("Dados importados:", data)
   }
 
   return (
     <>
-      {/* Scraper */}
       <ProductScraper onProductFetched={handleProductFetched} />
-
-      {/* Formulário */}
       <ProductForm 
         categories={categories}
         onSubmit={onSubmit}
