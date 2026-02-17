@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { notFound } from "next/navigation"
-import { AvatarUpload } from "@/components/settings/AvatarUpload"
-import { ProfileForm } from "@/components/settings/ProfileForm"
-import { SocialLinks } from "@/components/settings/SocialLinks"
+import { SettingsClientWrapper } from "./SettingsClientWrapper"
 import { revalidatePath } from "next/cache"
 
 export default async function SettingsPage() {
@@ -31,9 +29,7 @@ export default async function SettingsPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      redirect("/login")
-    }
+    if (!user) return
 
     await supabase
       .from('profiles')
@@ -55,9 +51,7 @@ export default async function SettingsPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      redirect("/login")
-    }
+    if (!user) return
 
     await supabase
       .from('profiles')
@@ -79,9 +73,7 @@ export default async function SettingsPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return false
-    }
+    if (!user) return false
 
     const { data } = await supabase
       .from('profiles')
@@ -90,7 +82,7 @@ export default async function SettingsPage() {
       .neq('id', user.id)
       .single()
 
-    return !data // Retorna true se disponível
+    return !data
   }
 
   return (
@@ -101,66 +93,12 @@ export default async function SettingsPage() {
           Gerencie suas informações pessoais
         </p>
 
-        <div className="space-y-6">
-          {/* Avatar */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <AvatarUpload 
-              currentAvatar={profile.avatar_url}
-              onUpload={async (file) => {
-                "use server"
-                // TODO: Implementar upload para Supabase Storage
-                console.log("Upload avatar:", file)
-              }}
-              username={profile.username}
-            />
-          </div>
-
-          {/* Informações do Perfil */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <ProfileForm 
-              initialData={{
-                display_name: profile.display_name,
-                username: profile.username,
-                bio: profile.bio,
-                location: profile.location
-              }}
-              onSubmit={updateProfile}
-              onCheckUsername={checkUsername}
-            />
-          </div>
-
-          {/* Redes Sociais */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <SocialLinks 
-              initialData={{
-                instagram: profile.instagram,
-                youtube: profile.youtube,
-                tiktok: profile.tiktok,
-                website: profile.website
-              }}
-              onChange={async (data) => {
-                "use server"
-                await updateSocialLinks(data)
-              }}
-            />
-          </div>
-
-          {/* Plano Atual */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-medium mb-4">Plano Atual</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold capitalize">{profile.plan_type}</p>
-                <p className="text-sm text-gray-500">
-                  {profile.plan_type === 'free' ? 'Plano gratuito' : 'Plano profissional'}
-                </p>
-              </div>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                {profile.plan_type === 'free' ? 'Fazer upgrade' : 'Gerenciar plano'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SettingsClientWrapper 
+          profile={profile}
+          onUpdateProfile={updateProfile}
+          onUpdateSocial={updateSocialLinks}
+          onCheckUsername={checkUsername}
+        />
       </div>
     </div>
   )
