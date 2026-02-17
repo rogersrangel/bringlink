@@ -28,6 +28,21 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
     category: initialData?.category || "",
     image: initialData?.image_url || null
   })
+  // useEffect para atualizar quando scrapedData mudar
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        title: initialData.title || "",
+        description: initialData.description || "",
+        original_price: initialData.price || "",
+        discounted_price: initialData.discounted_price || initialData.price || "",
+        product_url: initialData.product_url || "",
+        platform: initialData.platform || "",
+        category: initialData.category || "",
+        image: initialData.image || null
+      })
+    }
+  }, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({

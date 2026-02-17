@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { ProductForm } from "@/components/products/ProductForm"
-import { ProductScraper } from "@/components/products/ProductScraper"
+import { ProductClientWrapper } from "./ProductClientWrapper"
+import { revalidatePath } from "next/cache"
 
 export default async function NewProductPage() {
   const supabase = await createClient()
@@ -11,7 +11,7 @@ export default async function NewProductPage() {
     redirect("/login")
   }
 
-  // Buscar categorias existentes do usuário
+  // Buscar categorias existentes
   const { data: products } = await supabase
     .from('products')
     .select('category')
@@ -29,11 +29,10 @@ export default async function NewProductPage() {
       redirect("/login")
     }
 
-    // Calcular desconto
     const originalPrice = parseFloat(formData.original_price)
     const discountedPrice = parseFloat(formData.discounted_price)
     
-    await supabase
+    const { error } = await supabase
       .from('products')
       .insert({
         user_id: user.id,
@@ -48,6 +47,11 @@ export default async function NewProductPage() {
         is_active: true,
         clicks_count: 0
       })
+
+    if (!error) {
+      revalidatePath('/products')
+      redirect('/products')
+    }
   }
 
   return (
@@ -58,14 +62,7 @@ export default async function NewProductPage() {
           Preencha os dados do produto manualmente ou importe de um link
         </p>
 
-        {/* Scraper */}
-        <ProductScraper onProductFetched={(data) => {
-          // Isso será gerenciado pelo client component
-          console.log("Dados do produto:", data)
-        }} />
-
-        {/* Formulário */}
-        <ProductForm 
+        <ProductClientWrapper 
           categories={categories}
           onSubmit={createProduct}
         />

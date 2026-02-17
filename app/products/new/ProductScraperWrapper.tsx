@@ -1,11 +1,34 @@
 "use client"
 
+import { useState } from "react"
 import { ProductScraper } from "@/components/products/ProductScraper"
+import { ProductForm } from "@/components/products/ProductForm"
 
-export function ProductScraperWrapper() {
-  return <ProductScraper onProductFetched={(data) => {
-    // Aqui você vai preencher o formulário com os dados
-    console.log("Produto importado:", data)
-    // TODO: Disparar evento para preencher o formulário
-  }} />
+interface ProductClientWrapperProps {
+  categories: string[]
+  onSubmit: (data: any) => Promise<void>
+}
+
+export function ProductClientWrapper({ categories, onSubmit }: ProductClientWrapperProps) {
+  const [scrapedData, setScrapedData] = useState<any>(null)
+
+  const handleProductFetched = (data: any) => {
+    setScrapedData(data)
+    // Aqui você pode preencher o formulário com os dados
+    console.log("Dados importados:", data)
+  }
+
+  return (
+    <>
+      {/* Scraper */}
+      <ProductScraper onProductFetched={handleProductFetched} />
+
+      {/* Formulário */}
+      <ProductForm 
+        categories={categories}
+        onSubmit={onSubmit}
+        initialData={scrapedData}
+      />
+    </>
+  )
 }
