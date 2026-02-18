@@ -14,14 +14,19 @@ interface ClicksChartProps {
 }
 
 export function ClicksChart({ initialData }: ClicksChartProps) {
-  const [data, setData] = useState<ChartData[]>(initialData)
+  const [data, setData] = useState<ChartData[]>(initialData || [])
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d")
 
-  // Atualizar dados quando o período mudar (depois implementaremos busca real)
+  // Este useEffect só deve ser ativado se você realmente quiser buscar mais dados
   useEffect(() => {
-    // Por enquanto, usa os dados iniciais para 7d
-    // Depois vamos buscar do banco para 30d e 90d
-    setData(initialData)
+    // Se você tiver uma função para buscar dados de 30/90 dias, chame-a aqui
+    // Por enquanto, vamos manter os dados iniciais
+    if (period === '7d') {
+      setData(initialData || [])
+    } else {
+      // Aqui você futuramente buscará dados de 30/90 dias
+      console.log(`Buscar dados para período ${period}`)
+    }
   }, [period, initialData])
 
   return (
