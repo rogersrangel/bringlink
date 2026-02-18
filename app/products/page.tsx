@@ -109,8 +109,8 @@ async function duplicateProduct(productId: string) {
     return
   }
 
-  // Criar cópia
-  const { id, created_at, updated_at, clicks_count, ...productData } = original
+  // 🔥 CORREÇÃO AQUI: remove discount_percentage que é gerado automaticamente
+  const { id, created_at, updated_at, clicks_count, discount_percentage, ...productData } = original
   console.log("🟡 Dados para cópia:", productData)
 
   const { error, data } = await supabase
