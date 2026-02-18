@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"  // ← IMPORT ADICIONADO
 import { motion } from "framer-motion"
 import { Edit, Eye, Power, Trash2, Copy, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
@@ -24,38 +23,41 @@ export function ProductActions({
 }: ProductActionsProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()  // ← AGORA FUNCIONA
 
-  const handleToggleStatus = async () => {
+  const handleToggleStatus = () => {
     setIsLoading(true)
     try {
-      await onToggleStatus(productId)
+      onToggleStatus(productId)
+      toast.success(isActive ? 'Produto desativado' : 'Produto ativado')
+    } catch (error) {
+      toast.error('Erro ao alterar status')
     } finally {
       setIsLoading(false)
       setShowMenu(false)
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!confirm("Tem certeza que deseja excluir este produto?")) return
     
     setIsLoading(true)
     try {
-      await onDelete(productId)
+      onDelete(productId)
+      toast.success('Produto excluído com sucesso!')
     } catch (error) {
-      console.error("Erro ao deletar:", error)
+      toast.error('Erro ao excluir produto')
     } finally {
       setIsLoading(false)
       setShowMenu(false)
     }
   }
 
-  const handleDuplicate = async () => {
+  const handleDuplicate = () => {
     if (!onDuplicate) return
     
     setIsLoading(true)
     try {
-      await onDuplicate(productId)
+      onDuplicate(productId)
       toast.success('Produto duplicado com sucesso!')
     } catch (error) {
       toast.error('Erro ao duplicar produto')
@@ -67,7 +69,6 @@ export function ProductActions({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Ver na vitrine */}
       <Link href={`/shop/${productId}`} target="_blank">
         <motion.button
           className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
@@ -80,7 +81,6 @@ export function ProductActions({
         </motion.button>
       </Link>
 
-      {/* Editar */}
       <Link href={`/products/${productId}/edit`}>
         <motion.button
           className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
@@ -93,7 +93,6 @@ export function ProductActions({
         </motion.button>
       </Link>
 
-      {/* Ativar/Desativar */}
       <motion.button
         onClick={handleToggleStatus}
         className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${
@@ -109,7 +108,6 @@ export function ProductActions({
         <Power size={16} />
       </motion.button>
 
-      {/* Menu com mais opções */}
       <div className="relative">
         <motion.button
           onClick={() => setShowMenu(!showMenu)}

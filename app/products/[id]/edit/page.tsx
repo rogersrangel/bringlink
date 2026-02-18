@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { notFound } from "next/navigation"
-import { ProductFormWrapper } from "./ProductFormWrapper"
+import { ProductFormWrapper } from "./ProductFormWrapper"  // ← CAMINHO CORRETO
 import { revalidatePath } from "next/cache"
 
 interface EditProductPageProps {

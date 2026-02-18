@@ -9,7 +9,6 @@ interface ProductFormWrapperProps {
 }
 
 export function ProductFormWrapper({ product, categories, onSubmit }: ProductFormWrapperProps) {
-  // Converte os dados do produto para o formato que o ProductForm espera
   const initialData = {
     title: product.title,
     description: product.description || "",
