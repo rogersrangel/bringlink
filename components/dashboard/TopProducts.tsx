@@ -1,49 +1,20 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ExternalLink, TrendingUp } from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import Link from "next/link"
 
-interface Product {
-  id: string
-  title: string
-  clicks: number
-  price: number
-  image: string
+interface TopProductsProps {
+  products: any[]
 }
 
-export function TopProducts() {
-  // Dados mockados
-  const products: Product[] = [
-    {
-      id: "1",
-      title: "Headset Gamer RGB Wireless",
-      clicks: 234,
-      price: 129.90,
-      image: "🎧"
-    },
-    {
-      id: "2",
-      title: "Mouse Sem Fio Logitech",
-      clicks: 189,
-      price: 199.90,
-      image: "🖱️"
-    },
-    {
-      id: "3",
-      title: "Cadeira Gamer Thunder X3",
-      clicks: 156,
-      price: 899.90,
-      image: "🪑"
-    },
-    {
-      id: "4",
-      title: "Teclado Mecânico RGB",
-      clicks: 98,
-      price: 329.90,
-      image: "⌨️"
-    }
-  ]
+export function TopProducts({ products }: TopProductsProps) {
+  // Pegar top 5 produtos mais clicados
+  const topProducts = [...products]
+    .sort((a, b) => (b.clicks_count || 0) - (a.clicks_count || 0))
+    .slice(0, 5)
+
+  const totalClicks = topProducts.reduce((acc, p) => acc + (p.clicks_count || 0), 0)
 
   return (
     <motion.div 
@@ -52,51 +23,54 @@ export function TopProducts() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Produtos mais clicados</h2>
-        <Link href="/products" className="text-sm text-purple-600 hover:text-purple-700">
-          Ver todos
-        </Link>
-      </div>
+      <h2 className="text-lg font-semibold mb-4">Produtos mais clicados</h2>
 
-      <div className="space-y-4">
-        {products.map((product, index) => (
-          <motion.div
-            key={product.id}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 * index }}
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-xl">
-              {product.image}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{product.title}</p>
-              <p className="text-xs text-gray-500">R$ {product.price.toFixed(2)}</p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="font-semibold text-sm">{product.clicks}</p>
-                <p className="text-xs text-gray-500">cliques</p>
+      {topProducts.length > 0 ? (
+        <div className="space-y-4">
+          {topProducts.map((product, index) => (
+            <motion.div
+              key={product.id}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-sm">
+                {product.image_url ? (
+                  <img src={product.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                ) : (
+                  <span>🛒</span>
+                )}
               </div>
               
-              <Link href={`/products/${product.id}`}>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{product.title}</p>
+                <p className="text-xs text-gray-500">
+                  {product.clicks_count || 0} cliques
+                </p>
+              </div>
+              
+              <Link href={`/products/${product.id}/edit`}>
                 <ExternalLink size={16} className="text-gray-400 hover:text-purple-600" />
               </Link>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
 
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">Total de cliques</span>
-          <span className="font-semibold">677</span>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Total de cliques</span>
+              <span className="font-semibold">{totalClicks}</span>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nenhum clique ainda</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Os cliques aparecerão aqui quando alguém comprar
+          </p>
+        </div>
+      )}
     </motion.div>
   )
 }

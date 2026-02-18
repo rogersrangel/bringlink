@@ -14,18 +14,58 @@ export default async function DashboardPage() {
     redirect("/login")
   }
 
-  // Buscar dados reais do banco
+  // Buscar produtos do usuário
   const { data: products } = await supabase
     .from('products')
     .select('*')
     .eq('user_id', user.id)
 
+  // Buscar cliques dos últimos 7 dias
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  const { data: recentClicks } = await supabase
+    .from('clicks')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('clicked_at', sevenDaysAgo.toISOString())
+    .order('clicked_at', { ascending: false })
+
+  // Calcular cliques de hoje
+  const today = new Date().toISOString().split('T')[0]
+  const todayClicks = recentClicks?.filter(click => 
+    click.clicked_at.startsWith(today)
+  ).length || 0
+
+  // Calcular total de cliques
+  const totalClicks = products?.reduce((acc, p) => acc + (p.clicks_count || 0), 0) || 0
+
+  // Estatísticas
   const stats = {
-    totalClicks: products?.reduce((acc, p) => acc + (p.clicks_count || 0), 0) || 0,
+    totalClicks,
     totalProducts: products?.length || 0,
-    todayClicks: 89, // Depois implementar cliques de hoje
-    conversionRate: 3.2
+    todayClicks,
+    conversionRate: products && products.length > 0 
+      ? Number(((totalClicks / (products.length * 100)) * 100).toFixed(1))
+      : 0
   }
+
+  // Preparar dados para o gráfico (últimos 7 dias)
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    return date.toISOString().split('T')[0]
+  }).reverse()
+
+  const chartData = last7Days.map(date => {
+    const clicks = recentClicks?.filter(click => 
+      click.clicked_at.startsWith(date)
+    ).length || 0
+    return { 
+      date: date.split('-')[2] + '/' + date.split('-')[1], 
+      clicks 
+    }
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -35,15 +75,15 @@ export default async function DashboardPage() {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2">
-            <ClicksChart />
+            <ClicksChart initialData={chartData} />
           </div>
           <div>
-            <TopProducts />
+            <TopProducts products={products || []} />
           </div>
         </div>
         
         <div className="mt-6">
-          <RecentProducts />
+          <RecentProducts products={products || []} />
         </div>
       </div>
     </div>

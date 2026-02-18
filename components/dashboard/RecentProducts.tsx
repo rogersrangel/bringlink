@@ -4,38 +4,15 @@ import { motion } from "framer-motion"
 import { PlusCircle } from "lucide-react"
 import Link from "next/link"
 
-interface RecentProduct {
-  id: string
-  title: string
-  addedAt: string
-  status: "active" | "inactive"
-  image: string
+interface RecentProductsProps {
+  products: any[]
 }
 
-export function RecentProducts() {
-  const products: RecentProduct[] = [
-    {
-      id: "1",
-      title: "Controle Pro Xbox Series X",
-      addedAt: "Hoje, 10:30",
-      status: "active",
-      image: "🎮"
-    },
-    {
-      id: "2",
-      title: "Headset Razer Kraken X",
-      addedAt: "Ontem",
-      status: "active",
-      image: "🎧"
-    },
-    {
-      id: "3",
-      title: "Suporte Monitor Articulado",
-      addedAt: "15/02",
-      status: "inactive",
-      image: "💺"
-    }
-  ]
+export function RecentProducts({ products }: RecentProductsProps) {
+  // Pegar 3 produtos mais recentes
+  const recentProducts = [...products]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3)
 
   return (
     <motion.div 
@@ -55,41 +32,61 @@ export function RecentProducts() {
         </Link>
       </div>
 
-      <div className="space-y-3">
-        {products.map((product, index) => (
-          <motion.div
-            key={product.id}
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 * index }}
+      {recentProducts.length > 0 ? (
+        <div className="space-y-3">
+          {recentProducts.map((product, index) => (
+            <motion.div
+              key={product.id}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm">
+                {product.image_url ? (
+                  <img src={product.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                ) : (
+                  <span>📦</span>
+                )}
+              </div>
+              
+              <div className="flex-1">
+                <p className="text-sm font-medium">{product.title}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(product.created_at).toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+              
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                product.is_active 
+                  ? "bg-green-100 text-green-700" 
+                  : "bg-gray-100 text-gray-600"
+              }`}>
+                {product.is_active ? "Ativo" : "Inativo"}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nenhum produto ainda</p>
+          <Link 
+            href="/products/new"
+            className="text-sm text-purple-600 hover:text-purple-700 mt-2 inline-block"
           >
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm">
-              {product.image}
-            </div>
-            
-            <div className="flex-1">
-              <p className="text-sm font-medium">{product.title}</p>
-              <p className="text-xs text-gray-500">{product.addedAt}</p>
-            </div>
-            
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              product.status === "active" 
-                ? "bg-green-100 text-green-700" 
-                : "bg-gray-100 text-gray-600"
-            }`}>
-              {product.status === "active" ? "Ativo" : "Inativo"}
-            </span>
-          </motion.div>
-        ))}
-      </div>
+            Adicionar primeiro produto →
+          </Link>
+        </div>
+      )}
 
-      <Link 
-        href="/products" 
-        className="block text-center text-sm text-purple-600 hover:text-purple-700 mt-4 pt-3 border-t border-gray-100"
-      >
-        Ver todos os produtos →
-      </Link>
+      {recentProducts.length > 0 && (
+        <Link 
+          href="/products" 
+          className="block text-center text-sm text-purple-600 hover:text-purple-700 mt-4 pt-3 border-t border-gray-100"
+        >
+          Ver todos os produtos →
+        </Link>
+      )}
     </motion.div>
   )
 }

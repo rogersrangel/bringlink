@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { motion } from "framer-motion"
 
@@ -9,23 +9,20 @@ interface ChartData {
   clicks: number
 }
 
-export function ClicksChart() {
-  const [data, setData] = useState<ChartData[]>([])
+interface ClicksChartProps {
+  initialData: ChartData[]
+}
+
+export function ClicksChart({ initialData }: ClicksChartProps) {
+  const [data, setData] = useState<ChartData[]>(initialData)
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d")
 
-  // Dados mockados para exemplo
+  // Atualizar dados quando o período mudar (depois implementaremos busca real)
   useEffect(() => {
-    const mockData = [
-      { date: "10/02", clicks: 45 },
-      { date: "11/02", clicks: 52 },
-      { date: "12/02", clicks: 38 },
-      { date: "13/02", clicks: 65 },
-      { date: "14/02", clicks: 58 },
-      { date: "15/02", clicks: 72 },
-      { date: "16/02", clicks: 89 }
-    ]
-    setData(mockData)
-  }, [period])
+    // Por enquanto, usa os dados iniciais para 7d
+    // Depois vamos buscar do banco para 30d e 90d
+    setData(initialData)
+  }, [period, initialData])
 
   return (
     <motion.div 
@@ -55,29 +52,35 @@ export function ClicksChart() {
       </div>
 
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="date" stroke="#888888" fontSize={12} />
-            <YAxis stroke="#888888" fontSize={12} />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-              }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="clicks" 
-              stroke="#8b5cf6" 
-              strokeWidth={2}
-              dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
-              activeDot={{ r: 6, fill: "#8b5cf6" }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="date" stroke="#888888" fontSize={12} />
+              <YAxis stroke="#888888" fontSize={12} allowDecimals={false} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="clicks" 
+                stroke="#8b5cf6" 
+                strokeWidth={2}
+                dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
+                activeDot={{ r: 6, fill: "#8b5cf6" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            Nenhum clique registrado ainda
+          </div>
+        )}
       </div>
     </motion.div>
   )

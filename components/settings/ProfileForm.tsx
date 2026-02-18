@@ -22,14 +22,14 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }
   const [checkingUsername, setCheckingUsername] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
 
-  // Atualizar quando initialData mudar (depois de salvar)
+  // ← FIX: Atualiza o estado quando initialData muda
   useEffect(() => {
     setFormData(initialData)
   }, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    setFormData(prev => ({ ...prev, [name]: value }))
     
     if (name === 'username') {
       setUsernameAvailable(null)
@@ -49,27 +49,16 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setLoading(true)
-  
-  // LOG PARA VER O QUE ESTÁ SENDO ENVIADO
-  console.log("📤 ProfileForm - Dados enviados:", formData)
-  
-  try {
+    e.preventDefault()
+    setLoading(true)
     await onSubmit(formData)
-    console.log("✅ ProfileForm - onSubmit concluído")
-  } catch (error) {
-    console.error("❌ ProfileForm - Erro no onSubmit:", error)
+    setLoading(false)
   }
-  
-  setLoading(false)
-}
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h3 className="text-lg font-medium">Informações do Perfil</h3>
 
-      {/* Nome de exibição */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Nome de exibição
@@ -84,7 +73,6 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }
         />
       </div>
 
-      {/* Username */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Username
@@ -135,7 +123,6 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }
         )}
       </div>
 
-      {/* Bio */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Bio
@@ -150,7 +137,6 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }
         />
       </div>
 
-      {/* Localização */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Localização
@@ -165,7 +151,6 @@ export function ProfileForm({ initialData, onSubmit, onCheckUsername, isSaving }
         />
       </div>
 
-      {/* Botão salvar */}
       <motion.button
         type="submit"
         disabled={loading || isSaving || usernameAvailable === false}

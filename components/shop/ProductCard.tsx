@@ -4,6 +4,8 @@ import { motion } from "framer-motion"
 import { ShoppingCart, ExternalLink, Heart } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
+import { TrackLink } from "@/components/tracking/TrackLink"
+
 
 interface ProductCardProps {
   product: {
@@ -34,7 +36,7 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
   }
 
   const getPlatformIcon = () => {
-    switch(product.platform) {
+    switch (product.platform) {
       case "shopee": return "🛒"
       case "aliexpress": return "📦"
       case "mercadolivre": return "🛍️"
@@ -55,8 +57,8 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
       {/* Imagem */}
       <div className="relative h-48 bg-gray-100 overflow-hidden">
         {product.image_url ? (
-          <img 
-            src={product.image_url} 
+          <img
+            src={product.image_url}
             alt={product.title}
             className="w-full h-full object-cover"
           />
@@ -68,7 +70,7 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
 
         {/* Badge de desconto */}
         {product.discount_percentage > 0 && (
-          <motion.div 
+          <motion.div
             className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold"
             initial={{ rotate: 0 }}
             animate={isHovered ? { rotate: [0, -5, 5, -5, 0] } : {}}
@@ -79,13 +81,13 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
         )}
 
         {/* Botão favorito */}
-        <button 
+        <button
           onClick={() => setIsLiked(!isLiked)}
           className="absolute top-2 left-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
         >
-          <Heart 
-            size={18} 
-            className={isLiked ? "fill-red-500 text-red-500" : "text-gray-600"} 
+          <Heart
+            size={18}
+            className={isLiked ? "fill-red-500 text-red-500" : "text-gray-600"}
           />
         </button>
 
@@ -102,7 +104,7 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
         <h3 className="font-semibold text-sm mb-2 line-clamp-2 min-h-[40px]">
           {product.title}
         </h3>
-        
+
         <div className="flex items-baseline gap-2 mb-3">
           <span className="text-2xl font-bold text-green-600">
             R$ {product.discounted_price.toFixed(2)}
@@ -120,16 +122,21 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
         )}
 
         {/* Botão de compra */}
-        <motion.button
-          onClick={handleClick}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 hover:from-purple-700 hover:to-blue-700 transition-colors"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        <TrackLink
+          productId={product.id}
+          href={product.product_url}
+          className="w-full"
         >
-          <ShoppingCart size={18} />
-          Comprar agora
-          <ExternalLink size={16} />
-        </motion.button>
+          <motion.button
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 hover:from-purple-700 hover:to-blue-700 transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <ShoppingCart size={18} />
+            Comprar agora
+            <ExternalLink size={16} />
+          </motion.button>
+        </TrackLink>
       </div>
     </motion.div>
   )
