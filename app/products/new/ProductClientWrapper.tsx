@@ -23,6 +23,7 @@ export function ProductClientWrapper({ categories, onSubmit }: ProductClientWrap
         categories={categories}
         onSubmit={onSubmit}
         initialData={scrapedData}
+        isEditing={false}
       />
     </>
   )

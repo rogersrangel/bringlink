@@ -51,37 +51,36 @@ export function StatsCards({ stats }: StatsCardsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {cards.map((card, index) => {
-        const Icon = card.icon
-
-        return (
-          <Link href={`/analytics?period=7d&metric=${card.title.toLowerCase()}`}>
-
-            <motion.div
-              key={card.title + index}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                  <Icon className={`w-5 h-5 text-${card.color.split('-')[1]}-600`} />
-                </div>
-                <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  {card.change}
-                </span>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {cards.map((card, index) => {
+      const Icon = card.icon
+      return (
+        // A key DEVE estar no elemento mais externo retornado pelo map
+        <Link 
+          key={card.title + index} // <-- KEY ADICIONADA AQUI!
+          href={`/analytics?period=7d&metric=${card.title.toLowerCase()}`}
+        >
+          <motion.div
+            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ y: -4 }}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className={`p-2 rounded-lg ${card.bgColor}`}>
+                <Icon className={`w-5 h-5 text-${card.color.split('-')[1]}-600`} />
               </div>
-
-              <h3 className="text-gray-500 text-sm mb-1">{card.title}</h3>
-              <p className="text-2xl font-bold">{card.value.toLocaleString()}</p>
-            </motion.div>
-          </Link>
-
-        )
-      })}
-    </div>
-  )
+              <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                {card.change}
+              </span>
+            </div>
+            <h3 className="text-gray-500 text-sm mb-1">{card.title}</h3>
+            <p className="text-2xl font-bold">{card.value.toLocaleString()}</p>
+          </motion.div>
+        </Link>
+      )
+    })}
+  </div>
+)
 }
