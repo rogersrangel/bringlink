@@ -2,6 +2,26 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { getGeoData } from "@/lib/geolocation"
 
+// 🔥 FUNÇÕES QUE ESTAVAM FALTANDO 🔥
+function detectDevice(userAgent: string): string {
+  const ua = userAgent.toLowerCase()
+  if (ua.includes('mobile')) return 'mobile'
+  if (ua.includes('tablet')) return 'tablet'
+  if (ua.includes('ipad')) return 'tablet'
+  if (ua.includes('android') && !ua.includes('mobile')) return 'tablet'
+  return 'desktop'
+}
+
+function detectBrowser(userAgent: string): string {
+  const ua = userAgent.toLowerCase()
+  if (ua.includes('chrome')) return 'chrome'
+  if (ua.includes('firefox')) return 'firefox'
+  if (ua.includes('safari') && !ua.includes('chrome')) return 'safari'
+  if (ua.includes('edge')) return 'edge'
+  if (ua.includes('opera') || ua.includes('opr')) return 'opera'
+  return 'other'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { productId, userId } = await request.json()
@@ -21,7 +41,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || ''
     const referrer = request.headers.get('referer') || ''
 
-    // Detectar dispositivo
+    // Detectar dispositivo (agora funciona!)
     const deviceType = detectDevice(userAgent)
     const browser = detectBrowser(userAgent)
 
