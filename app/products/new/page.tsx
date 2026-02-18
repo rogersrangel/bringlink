@@ -1,9 +1,6 @@
-"use client"
-
-
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { ProductClientWrapper } from "./ProductClientWrapper"
+import { ProductClientWrapper } from "@/app/products/new/ProductClientWrapper"
 import { revalidatePath } from "next/cache"
 
 export default async function NewProductPage() {

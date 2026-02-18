@@ -9,7 +9,7 @@ interface ProductFormWrapperProps {
 }
 
 export function ProductFormWrapper({ product, categories, onSubmit }: ProductFormWrapperProps) {
-  // Converter os dados do produto para o formato esperado pelo formulário
+  // Converte os dados do produto para o formato que o ProductForm espera
   const initialData = {
     title: product.title,
     description: product.description || "",
@@ -22,7 +22,7 @@ export function ProductFormWrapper({ product, categories, onSubmit }: ProductFor
   }
 
   return (
-    <ProductForm 
+    <ProductForm
       categories={categories}
       onSubmit={onSubmit}
       initialData={initialData}
