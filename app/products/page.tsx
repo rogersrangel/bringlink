@@ -8,7 +8,7 @@ import Link from "next/link"
 import { revalidatePath } from "next/cache"
 
 // Server Actions - TODAS recebendo string (id)
-async function toggleProductStatus(productId: string) {  // ← Mudou de FormData para string
+async function toggleProductStatus(productId: string) {
   "use server"
   
   const supabase = await createClient()
@@ -76,6 +76,7 @@ async function deleteProduct(productId: string) {
   revalidatePath('/products')
 }
 
+// 🔥 FUNÇÃO CORRIGIDA (removida a duplicação)
 async function duplicateProduct(productId: string) {
   "use server"
   
@@ -88,10 +89,9 @@ async function duplicateProduct(productId: string) {
     console.error("🔴 Usuário não autenticado")
     return
   }
-  console.log("🟢 Usuário autenticado:", user.id)
+  console.log("🟢 Usuário OK:", user.id)
 
   // Buscar produto original
-  console.log("🔵 Buscando produto original...")
   const { data: original, error: fetchError } = await supabase
     .from('products')
     .select('*')
@@ -99,22 +99,20 @@ async function duplicateProduct(productId: string) {
     .single()
 
   if (fetchError || !original) {
-    console.error("🔴 Produto original não encontrado:", fetchError)
+    console.error("🔴 Erro ao buscar original:", fetchError)
     return
   }
-  console.log("🟢 Produto original encontrado:", original.title)
+  console.log("🟢 Original encontrado:", original.title)
 
   if (original.user_id !== user.id) {
-    console.error("🔴 Usuário não tem permissão")
+    console.error("🔴 Permissão negada")
     return
   }
-  console.log("🟢 Permissão OK")
 
   // Criar cópia
   const { id, created_at, updated_at, clicks_count, ...productData } = original
   console.log("🟡 Dados para cópia:", productData)
 
-  console.log("🔵 Inserindo cópia...")
   const { error, data } = await supabase
     .from('products')
     .insert({
@@ -126,11 +124,11 @@ async function duplicateProduct(productId: string) {
     .select()
 
   if (error) {
-    console.error("🔴 Erro ao duplicar:", error)
+    console.error("🔴 Erro no insert:", error)
     return
   }
 
-  console.log("🟢✅ Produto duplicado com sucesso:", data)
+  console.log("🟢✅ Sucesso! Cópia criada:", data)
   revalidatePath('/products')
 }
 
@@ -212,9 +210,9 @@ export default async function ProductsPage() {
         {/* Tabela de produtos */}
         <ProductTable
           products={products || []}
-          onToggleStatus={toggleProductStatus}  // ← Agora todas são string
-          onDelete={deleteProduct}               // ← string
-          onDuplicate={duplicateProduct}         // ← string
+          onToggleStatus={toggleProductStatus}
+          onDelete={deleteProduct}
+          onDuplicate={duplicateProduct}
         />
       </div>
     </div>
