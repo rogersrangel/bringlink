@@ -1,7 +1,10 @@
 "use client"
 
+import { useState } from "react"  // ← IMPORT FALTANDO
 import { motion } from "framer-motion"
-import { Package, ShoppingBag, Eye, TrendingUp } from "lucide-react"
+import { Edit, Eye, Power, Trash2, Copy, MoreHorizontal } from "lucide-react"  // ← TODOS OS ÍCONES
+import Link from "next/link"  // ← IMPORT FALTANDO
+import toast from 'react-hot-toast'  // ← IMPORT FALTANDO
 
 interface ProductActionsProps {
   productId: string

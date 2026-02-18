@@ -17,32 +17,28 @@ export function ProductStats({ totalProducts, activeProducts, totalClicks, featu
       value: totalProducts,
       icon: Package,
       color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-600"
+      bgColor: "bg-blue-50"
     },
     {
       title: "Produtos Ativos",
       value: activeProducts,
       icon: ShoppingBag,
       color: "from-green-500 to-green-600",
-      bgColor: "bg-green-50",
-      textColor: "text-green-600"
+      bgColor: "bg-green-50"
     },
     {
       title: "Total de Cliques",
       value: totalClicks,
       icon: Eye,
       color: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50",
-      textColor: "text-purple-600"
+      bgColor: "bg-purple-50"
     },
     {
       title: "Em Destaque",
       value: featuredProducts,
       icon: TrendingUp,
       color: "from-orange-500 to-orange-600",
-      bgColor: "bg-orange-50",
-      textColor: "text-orange-600"
+      bgColor: "bg-orange-50"
     }
   ]
 
@@ -50,7 +46,6 @@ export function ProductStats({ totalProducts, activeProducts, totalClicks, featu
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {stats.map((stat, index) => {
         const Icon = stat.icon
-        
         return (
           <motion.div
             key={stat.title}
@@ -62,9 +57,8 @@ export function ProductStats({ totalProducts, activeProducts, totalClicks, featu
           >
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                <Icon className={`w-5 h-5 ${stat.textColor}`} />
+                <Icon className={`w-5 h-5 text-${stat.color.split('-')[1]}-600`} />
               </div>
-              
               <div>
                 <p className="text-sm text-gray-500">{stat.title}</p>
                 <p className="text-2xl font-bold">{stat.value}</p>
