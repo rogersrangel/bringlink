@@ -10,7 +10,12 @@ interface ProductStatsProps {
   featuredProducts: number
 }
 
-export function ProductStats({ totalProducts, activeProducts, totalClicks, featuredProducts }: ProductStatsProps) {
+export function ProductStats({
+  totalProducts,
+  activeProducts,
+  totalClicks,
+  featuredProducts
+}: ProductStatsProps) {
   const stats = [
     {
       title: "Total de Produtos",
