@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google"; // Vamos usar Inter que é mais limpa
 import "./globals.css";
+import { Toaster } from "@/components/ui/Toaster" // ← ADICIONE ESTA LINHA
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,6 +20,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}> {/* ← USAMOS INTER */}
         {children}
+        <Toaster /> 
       </body>
     </html>
   );
