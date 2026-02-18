@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion"
 import { MousePointerClick, Eye, ShoppingBag, TrendingUp } from "lucide-react"
+import Link from "next/link"
+
 
 interface StatsCardsProps {
   stats: {
@@ -54,6 +56,8 @@ export function StatsCards({ stats }: StatsCardsProps) {
         const Icon = card.icon
         
         return (
+          <Link href={`/analytics?period=7d&metric=${card.title.toLowerCase()}`}>
+
           <motion.div
             key={card.title}
             className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
@@ -74,6 +78,8 @@ export function StatsCards({ stats }: StatsCardsProps) {
             <h3 className="text-gray-500 text-sm mb-1">{card.title}</h3>
             <p className="text-2xl font-bold">{card.value.toLocaleString()}</p>
           </motion.div>
+          </Link>
+
         )
       })}
     </div>
