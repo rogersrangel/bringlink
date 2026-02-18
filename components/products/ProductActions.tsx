@@ -1,19 +1,18 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"  // ← IMPORT ADICIONADO
 import { motion } from "framer-motion"
 import { Edit, Eye, Power, Trash2, Copy, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import toast from 'react-hot-toast'
-
 
 interface ProductActionsProps {
   productId: string
   isActive: boolean
-  onToggleStatus: (productId: string) => Promise<void>  // ← mudou de FormData para string
-  onDelete: (productId: string) => Promise<void>        // ← mudou de FormData para string
-  onDuplicate?: (productId: string) => Promise<void>    // ← mudou de FormData para string
+  onToggleStatus: (productId: string) => void
+  onDelete: (productId: string) => void
+  onDuplicate?: (productId: string) => void
 }
 
 export function ProductActions({ 
@@ -25,12 +24,12 @@ export function ProductActions({
 }: ProductActionsProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const router = useRouter()  // ← AGORA FUNCIONA
 
   const handleToggleStatus = async () => {
     setIsLoading(true)
     try {
-      await onToggleStatus(productId)  // ← passa o ID diretamente
+      await onToggleStatus(productId)
     } finally {
       setIsLoading(false)
       setShowMenu(false)
@@ -42,7 +41,7 @@ export function ProductActions({
     
     setIsLoading(true)
     try {
-      await onDelete(productId)  // ← passa o ID diretamente
+      await onDelete(productId)
     } catch (error) {
       console.error("Erro ao deletar:", error)
     } finally {
@@ -51,20 +50,20 @@ export function ProductActions({
     }
   }
 
-const handleDuplicate = async () => {
-  if (!onDuplicate) return
-  
-  setIsLoading(true)
-  try {
-    await onDuplicate(productId)
-    toast.success('Produto duplicado com sucesso!')
-  } catch (error) {
-    toast.error('Erro ao duplicar produto')
-  } finally {
-    setIsLoading(false)
-    setShowMenu(false)
+  const handleDuplicate = async () => {
+    if (!onDuplicate) return
+    
+    setIsLoading(true)
+    try {
+      await onDuplicate(productId)
+      toast.success('Produto duplicado com sucesso!')
+    } catch (error) {
+      toast.error('Erro ao duplicar produto')
+    } finally {
+      setIsLoading(false)
+      setShowMenu(false)
+    }
   }
-}
 
   return (
     <div className="flex items-center gap-2">
