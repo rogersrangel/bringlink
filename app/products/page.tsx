@@ -8,7 +8,7 @@ import Link from "next/link"
 import { revalidatePath } from "next/cache"
 
 // Server Actions - TODAS recebendo string (id)
-async function toggleProductStatus(productId: string) {
+async function toggleProductStatus(productId: string) {  // ← Mudou de FormData para string
   "use server"
   
   const supabase = await createClient()
@@ -25,7 +25,7 @@ async function toggleProductStatus(productId: string) {
 
   if (!product) return
 
-  // Atualizar status
+  // Atualizar status (inverte o status atual)
   await supabase
     .from('products')
     .update({ is_active: !product.is_active })
@@ -40,24 +40,38 @@ async function deleteProduct(productId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user) return
+  if (!user) {
+    console.error("Usuário não autenticado")
+    return
+  }
 
   // Verificar se o produto pertence ao usuário
-  const { data: product } = await supabase
+  const { data: product, error: fetchError } = await supabase
     .from('products')
     .select('user_id')
     .eq('id', productId)
     .single()
 
-  if (!product || product.user_id !== user.id) {
-    throw new Error("Produto não encontrado")
+  if (fetchError || !product) {
+    console.error("Produto não encontrado:", productId)
+    return
+  }
+
+  if (product.user_id !== user.id) {
+    console.error("Usuário não tem permissão para deletar este produto")
+    return
   }
 
   // Deletar produto
-  await supabase
+  const { error } = await supabase
     .from('products')
     .delete()
     .eq('id', productId)
+
+  if (error) {
+    console.error("Erro ao deletar:", error)
+    return
+  }
 
   revalidatePath('/products')
 }
@@ -65,26 +79,43 @@ async function deleteProduct(productId: string) {
 async function duplicateProduct(productId: string) {
   "use server"
   
+  console.log("🔵 INÍCIO - Duplicando produto:", productId)
+  
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user) return
+  if (!user) {
+    console.error("🔴 Usuário não autenticado")
+    return
+  }
+  console.log("🟢 Usuário autenticado:", user.id)
 
   // Buscar produto original
-  const { data: original } = await supabase
+  console.log("🔵 Buscando produto original...")
+  const { data: original, error: fetchError } = await supabase
     .from('products')
     .select('*')
     .eq('id', productId)
     .single()
 
-  if (!original || original.user_id !== user.id) {
-    throw new Error("Produto não encontrado")
+  if (fetchError || !original) {
+    console.error("🔴 Produto original não encontrado:", fetchError)
+    return
   }
+  console.log("🟢 Produto original encontrado:", original.title)
 
-  // Criar cópia (removendo id e campos únicos)
+  if (original.user_id !== user.id) {
+    console.error("🔴 Usuário não tem permissão")
+    return
+  }
+  console.log("🟢 Permissão OK")
+
+  // Criar cópia
   const { id, created_at, updated_at, clicks_count, ...productData } = original
+  console.log("🟡 Dados para cópia:", productData)
 
-  await supabase
+  console.log("🔵 Inserindo cópia...")
+  const { error, data } = await supabase
     .from('products')
     .insert({
       ...productData,
@@ -92,7 +123,14 @@ async function duplicateProduct(productId: string) {
       is_active: false,
       clicks_count: 0
     })
+    .select()
 
+  if (error) {
+    console.error("🔴 Erro ao duplicar:", error)
+    return
+  }
+
+  console.log("🟢✅ Produto duplicado com sucesso:", data)
   revalidatePath('/products')
 }
 
@@ -174,9 +212,9 @@ export default async function ProductsPage() {
         {/* Tabela de produtos */}
         <ProductTable
           products={products || []}
-          onToggleStatus={toggleProductStatus}
-          onDelete={deleteProduct}
-          onDuplicate={duplicateProduct}
+          onToggleStatus={toggleProductStatus}  // ← Agora todas são string
+          onDelete={deleteProduct}               // ← string
+          onDuplicate={duplicateProduct}         // ← string
         />
       </div>
     </div>
