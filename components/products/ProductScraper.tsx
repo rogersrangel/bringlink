@@ -46,7 +46,7 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
                platform === 'mercadolivre' ? 'Cadeira Gamer Thunder X3' :
                'Produto Importado',
         price: Math.floor(Math.random() * 500) + 100,
-        image: `https://via.placeholder.com/300x300?text=${platform}`,
+        image: `https://placehold.co/300x300/8b5cf6/white?text=${platform}`,
         platform: platform
       }
 
