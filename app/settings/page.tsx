@@ -3,6 +3,9 @@ import { redirect } from "next/navigation"
 import { notFound } from "next/navigation"
 import { SettingsClientWrapper } from "./SettingsClientWrapper"
 import { revalidatePath } from "next/cache"
+import { ArrowLeft } from "lucide-react" // ← Adicione com os outros imports
+import Link from "next/link" // ← Verifique se Link já está importado
+
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -108,6 +111,15 @@ export default async function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="mb-6">
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+        >
+          <ArrowLeft size={18} />
+          Voltar
+        </Link>
+      </div>
         <h1 className="text-3xl font-bold mb-2">Configurações</h1>
         <p className="text-gray-600 mb-8">
           Gerencie suas informações pessoais
