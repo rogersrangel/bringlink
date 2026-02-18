@@ -3,9 +3,8 @@ import { redirect } from "next/navigation"
 import { notFound } from "next/navigation"
 import { SettingsClientWrapper } from "./SettingsClientWrapper"
 import { revalidatePath } from "next/cache"
-import { ArrowLeft } from "lucide-react" // ← Adicione com os outros imports
-import Link from "next/link" // ← Verifique se Link já está importado
-
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -26,47 +25,47 @@ export default async function SettingsPage() {
     notFound()
   }
 
- async function updateProfile(formData: any) {
-  "use server"
-  
-  console.log("🖥️ Server Action - Recebido:", formData)
-  
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  async function updateProfile(formData: any) {
+    "use server"
+    
+    console.log("🖥️ Server Action - Recebido:", formData)
+    
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    console.log("🖥️ Server Action - Usuário não autenticado")
-    return { error: "Não autorizado" }
-  }
+    if (!user) {
+      console.log("🖥️ Server Action - Usuário não autenticado")
+      return // ← Remove o objeto de retorno
+    }
 
-  console.log("🖥️ Server Action - User ID:", user.id)
-  console.log("🖥️ Server Action - Dados para update:", {
-    display_name: formData.display_name,
-    username: formData.username,
-    bio: formData.bio,
-    location: formData.location
-  })
-
-  const { error } = await supabase
-    .from('profiles')
-    .update({
+    console.log("🖥️ Server Action - User ID:", user.id)
+    console.log("🖥️ Server Action - Dados para update:", {
       display_name: formData.display_name,
       username: formData.username,
-      bio: formData.bio || null,
-      location: formData.location || null,
-      updated_at: new Date().toISOString()
+      bio: formData.bio,
+      location: formData.location
     })
-    .eq('id', user.id)
 
-  if (error) {
-    console.error("🖥️ Server Action - Erro no Supabase:", error)
-    return { error: error.message }
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        display_name: formData.display_name,
+        username: formData.username,
+        bio: formData.bio || null,
+        location: formData.location || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error("🖥️ Server Action - Erro no Supabase:", error)
+      return // ← Remove o objeto de retorno
+    }
+
+    console.log("🖥️ Server Action - Sucesso!")
+    revalidatePath('/settings')
+    // Não retorna nada (void)
   }
-
-  console.log("🖥️ Server Action - Sucesso!")
-  revalidatePath('/settings')
-  return { success: true }
-}
 
   async function updateSocialLinks(formData: any) {
     "use server"
@@ -111,15 +110,17 @@ export default async function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
+        {/* Botão Voltar */}
         <div className="mb-6">
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-        >
-          <ArrowLeft size={18} />
-          Voltar
-        </Link>
-      </div>
+          <Link 
+            href="/dashboard" 
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+          >
+            <ArrowLeft size={18} />
+            Voltar ao Dashboard
+          </Link>
+        </div>
+
         <h1 className="text-3xl font-bold mb-2">Configurações</h1>
         <p className="text-gray-600 mb-8">
           Gerencie suas informações pessoais
