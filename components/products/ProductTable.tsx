@@ -186,22 +186,23 @@ export function ProductTable({
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-xl">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-xl shrink-0">
                         {product.image_url ? (
                           <img src={product.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
                         ) : (
                           getPlatformIcon(product.platform)
                         )}
                       </div>
-                      <div>
+                      <div className="min-w-0"> {/* ← ESSA DIV É CRUCIAL */}
                         <Link
                           href={`/products/${product.id}/edit`}
-                          className="font-medium text-gray-900 hover:text-purple-600 hover:underline block truncate"
+                          className="font-medium text-gray-900 hover:text-purple-600 hover:underline block truncate max-w-[200px] lg:max-w-[300px]"
+                          title={product.title} // ← Mostra o texto completo no hover
                         >
                           {product.title}
                         </Link>
                         {product.category && (
-                          <p className="text-xs text-gray-500 truncate">{product.category}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-[150px]">{product.category}</p>
                         )}
                       </div>
                     </div>
@@ -237,8 +238,8 @@ export function ProductTable({
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.is_active
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600"
                         }`}>
                         {product.is_active ? "Ativo" : "Inativo"}
                       </span>
