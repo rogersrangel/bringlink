@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Search, Loader2, AlertCircle } from "lucide-react"
-import axios from "axios"
 
 interface ProductScraperProps {
   onProductFetched: (data: any) => void
@@ -20,6 +19,7 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
     if (url.includes('aliexpress')) return 'aliexpress'
     if (url.includes('mercadolivre') || url.includes('mercadolibre')) return 'mercadolivre'
     if (url.includes('amazon')) return 'amazon'
+    if (url.includes('amazon')) return 'amazon'
     return 'other'
   }
 
@@ -33,26 +33,28 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
     setError("")
 
     try {
-      // TODO: Implementar scraper real com API
-      // Por enquanto, dados mockados para demonstração
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const platform = detectPlatform(url)
-      
-      // Mock data baseado na plataforma
-      const mockData = {
-        title: platform === 'shopee' ? 'Headset Gamer RGB Wireless' :
-               platform === 'aliexpress' ? 'Mouse Gamer 16000 DPI' :
-               platform === 'mercadolivre' ? 'Cadeira Gamer Thunder X3' :
-               'Produto Importado',
-        price: Math.floor(Math.random() * 500) + 100,
-        image: `https://placehold.co/300x300/8b5cf6/white?text=${platform}`,
-        platform: platform
-      }
+      // 🔥 AGORA USA A API REAL
+      const response = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      })
 
-      onProductFetched(mockData)
+      const data = await response.json()
+      
+      if (data.error) {
+        setError(data.error)
+      } else {
+        onProductFetched({
+          title: data.title,
+          price: data.price || Math.floor(Math.random() * 500) + 100,
+          image: data.image || `https://placehold.co/300x300/8b5cf6/white?text=${data.platform}`,
+          platform: data.platform || detectPlatform(url)
+        })
+      }
     } catch (err) {
       setError("Erro ao buscar dados do produto")
+      console.error("Erro no scraper:", err)
     } finally {
       setLoading(false)
     }
@@ -80,6 +82,7 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
               {url.includes('shopee') && <span className="text-lg">🛒</span>}
               {url.includes('aliexpress') && <span className="text-lg">📦</span>}
               {url.includes('mercadolivre') && <span className="text-lg">🛍️</span>}
+              {url.includes('amazon') && <span className="text-lg">📚</span>}
             </div>
           )}
         </div>
