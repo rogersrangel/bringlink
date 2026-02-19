@@ -11,7 +11,7 @@ export default async function NewProductPage() {
     redirect("/login")
   }
 
-  // Buscar categorias existentes
+  // Buscar categorias existentes do usuário
   const { data: products } = await supabase
     .from('products')
     .select('category')
@@ -54,6 +54,13 @@ export default async function NewProductPage() {
     }
   }
 
+  // 🔥 FUNÇÃO PARA ADICIONAR NOVA CATEGORIA (opcional)
+  // async function addCategory(categoryName: string) {
+  //   "use server"
+  //   // Aqui você pode implementar lógica para salvar em uma tabela separada
+  //   console.log("Nova categoria:", categoryName)
+  // }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -65,6 +72,7 @@ export default async function NewProductPage() {
         <ProductClientWrapper 
           categories={categories}
           onSubmit={createProduct}
+          // onAddCategory={addCategory} // ← Descomente se quiser salvar em tabela separada
         />
       </div>
     </div>

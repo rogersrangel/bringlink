@@ -25,7 +25,7 @@ export function CategorySelect({ categories, selected, onSelect, onAddNew }: Cat
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium text-gray-700">
         Categoria
       </label>
       
@@ -45,6 +45,7 @@ export function CategorySelect({ categories, selected, onSelect, onAddNew }: Cat
           type="button"
           onClick={() => setShowNew(!showNew)}
           className="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          title="Adicionar nova categoria"
         >
           <Plus size={20} className="text-gray-600" />
         </button>

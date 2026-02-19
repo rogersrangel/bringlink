@@ -14,9 +14,16 @@ interface ProductFormProps {
   categories: string[]
   onSubmit: (data: any) => Promise<void>
   isEditing?: boolean
+  onAddCategory?: (category: string) => Promise<void> // ← ADICIONADO
 }
 
-export function ProductForm({ initialData, categories, onSubmit, isEditing }: ProductFormProps) {
+export function ProductForm({ 
+  initialData, 
+  categories, 
+  onSubmit, 
+  isEditing,
+  onAddCategory // ← RECEBENDO A PROP
+}: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -33,10 +40,10 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
   useEffect(() => {
     if (initialData) {
       console.log("📥 ProductForm recebeu initialData:", initialData)
-      
+
       const originalPrice = initialData.original_price ? Number(initialData.original_price).toFixed(2) : ""
       const discountedPrice = initialData.discounted_price ? Number(initialData.discounted_price).toFixed(2) : ""
-      
+
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
@@ -62,7 +69,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
       await onSubmit(formData)
       router.push("/products")
@@ -92,7 +99,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
           <ArrowLeft size={20} />
           Voltar
         </Link>
-        
+
         <motion.button
           type="submit"
           disabled={loading}
@@ -113,9 +120,9 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold mb-4">Informações do Produto</h2>
-            
+
             <div className="space-y-4">
-              {/* 🔥 TÍTULO COM CONTADOR E LIMITE */}
+              {/* TÍTULO COM CONTADOR */}
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-sm font-medium text-gray-700">
@@ -137,6 +144,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                 />
               </div>
 
+              {/* DESCRIÇÃO */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Descrição (opcional)
@@ -155,6 +163,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                 </div>
               </div>
 
+              {/* PREÇOS */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -190,6 +199,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                 </div>
               </div>
 
+              {/* LINK DO PRODUTO */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Link do Produto *
@@ -205,6 +215,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                 />
               </div>
 
+              {/* PLATAFORMA E CATEGORIA */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -225,26 +236,27 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                   </select>
                 </div>
 
+                {/* 🔥 CATEGORY SELECT AGORA USA onAddCategory */}
                 <CategorySelect
                   categories={categories}
                   selected={formData.category}
-                  onSelect={(cat) => setFormData({...formData, category: cat})}
-                  onAddNew={(newCat) => {
-                    console.log("Nova categoria:", newCat)
-                  }}
+                  onSelect={(cat) => setFormData({ ...formData, category: cat })}
+                  onAddNew={onAddCategory} // ← AGORA USA A PROP
                 />
               </div>
             </div>
           </div>
 
+          {/* UPLOAD DE IMAGEM */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <ImageUpload 
+            <ImageUpload
               onImageUpload={handleImageUpload}
               defaultImage={formData.image}
             />
           </div>
         </div>
 
+        {/* PREVIEW */}
         <div className="lg:col-span-1">
           <div className="sticky top-24">
             <h2 className="text-lg font-semibold mb-4">Preview</h2>

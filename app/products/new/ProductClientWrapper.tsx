@@ -7,9 +7,14 @@ import { ProductForm } from "@/components/products/ProductForm"
 interface ProductClientWrapperProps {
   categories: string[]
   onSubmit: (data: any) => Promise<void>
+  onAddCategory?: (category: string) => Promise<void> // ← Declarada aqui
 }
 
-export function ProductClientWrapper({ categories, onSubmit }: ProductClientWrapperProps) {
+export function ProductClientWrapper({ 
+  categories, 
+  onSubmit, 
+  onAddCategory // ← RECEBENDO A PROP AQUI!
+}: ProductClientWrapperProps) {
   const [scrapedData, setScrapedData] = useState<any>(null)
 
   const handleProductFetched = (data: any) => {
@@ -25,6 +30,7 @@ export function ProductClientWrapper({ categories, onSubmit }: ProductClientWrap
         onSubmit={onSubmit}
         initialData={scrapedData}
         isEditing={false}
+        onAddCategory={onAddCategory} // ← AGORA FUNCIONA!
       />
     </>
   )
