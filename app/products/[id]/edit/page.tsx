@@ -5,7 +5,9 @@ import { ProductFormWrapper } from "./ProductFormWrapper"
 import { revalidatePath } from "next/cache"
 
 interface EditProductPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{
+    id: string
+  }>
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
@@ -13,29 +15,45 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect("/login")
+  if (!user) {
+    redirect("/login")
+  }
 
+  // Buscar o produto pelo ID
   const { data: product, error } = await supabase
     .from('products')
     .select('*')
     .eq('id', id)
     .single()
 
-  if (error || !product) notFound()
-  if (product.user_id !== user.id) redirect("/products")
+  if (error || !product) {
+    notFound()
+  }
 
-  const { data: products } = await supabase
-    .from('products')
-    .select('category')
+  // Verificar se o produto pertence ao usuário
+  if (product.user_id !== user.id) {
+    redirect("/products")
+  }
+
+  // 🔥 Buscar categorias do usuário com is_default
+  const { data: userCategories } = await supabase
+    .from('categories')
+    .select('name, is_default')
     .eq('user_id', user.id)
+    .order('name', { ascending: true })
 
-  const categories = [...new Set(products?.map(p => p.category).filter(Boolean))] as string[]
+  // 🔥 Passar como array de objetos (nome + tipo)
+  const categories = userCategories?.map(c => ({
+    name: c.name,
+    is_default: c.is_default
+  })) || []
 
   async function updateProduct(formData: any) {
     "use server"
     
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+
     if (!user) redirect("/login")
 
     const originalPrice = parseFloat(formData.original_price)
@@ -64,7 +82,64 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
 
   async function addCategory(categoryName: string) {
     "use server"
-    console.log("Nova categoria na edição:", categoryName)
+    
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      throw new Error("Usuário não autenticado")
+    }
+
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('name', categoryName)
+      .eq('user_id', user.id)
+      .single()
+
+    if (existing) return
+
+    const { error } = await supabase
+      .from('categories')
+      .insert({
+        name: categoryName,
+        user_id: user.id,
+        is_default: false
+      })
+
+    if (error) throw new Error("Erro ao salvar categoria")
+    
+    revalidatePath(`/products/${id}/edit`)
+  }
+
+  async function deleteCategory(categoryName: string) {
+    "use server"
+    
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return
+
+    // Verificar se a categoria está em uso
+    const { data: productsWithCategory } = await supabase
+      .from('products')
+      .select('id')
+      .eq('category', categoryName)
+      .eq('user_id', user.id)
+
+    if (productsWithCategory && productsWithCategory.length > 0) {
+      throw new Error(`Categoria em uso por ${productsWithCategory.length} produto(s)`)
+    }
+
+    // Deletar apenas categorias criadas pelo usuário (is_default = false)
+    await supabase
+      .from('categories')
+      .delete()
+      .eq('name', categoryName)
+      .eq('user_id', user.id)
+      .eq('is_default', false)
+
+    revalidatePath(`/products/${id}/edit`)
   }
 
   return (
@@ -78,6 +153,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           categories={categories}
           onSubmit={updateProduct}
           onAddCategory={addCategory}
+          onDeleteCategory={deleteCategory}
         />
       </div>
     </div>

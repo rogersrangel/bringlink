@@ -15,24 +15,24 @@ export function CategorySelect({ categories, selected, onSelect, onAddNew }: Cat
   const [newCategory, setNewCategory] = useState("")
   const [isAdding, setIsAdding] = useState(false)
 
-  const handleAddNew = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!newCategory.trim() || !onAddNew) return
+ const handleAddNew = async (e: React.MouseEvent) => {
+  e.preventDefault() // ← IMPEDE O SUBMIT DO FORMULÁRIO
+  e.stopPropagation()
+  
+  if (!newCategory.trim() || !onAddNew) return
 
-    setIsAdding(true)
-    try {
-      await onAddNew(newCategory.trim())
-      onSelect(newCategory.trim())
-      setNewCategory("")
-      setShowNew(false)
-    } catch (error) {
-      console.error("Erro ao adicionar categoria:", error)
-    } finally {
-      setIsAdding(false)
-    }
+  setIsAdding(true)
+  try {
+    await onAddNew(newCategory.trim())
+    onSelect(newCategory.trim())
+    setNewCategory("")
+    setShowNew(false)
+  } catch (error) {
+    console.error("Erro ao adicionar categoria:", error)
+  } finally {
+    setIsAdding(false)
   }
+}
 
   return (
     <div className="space-y-2">

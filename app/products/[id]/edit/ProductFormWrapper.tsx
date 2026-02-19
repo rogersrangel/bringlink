@@ -7,13 +7,15 @@ interface ProductFormWrapperProps {
   categories: string[]
   onSubmit: (data: any) => Promise<void>
   onAddCategory?: (category: string) => Promise<void>
+  onDeleteCategory?: (category: string) => Promise<void>
 }
 
 export function ProductFormWrapper({ 
   product, 
   categories, 
   onSubmit,
-  onAddCategory 
+  onAddCategory,
+  onDeleteCategory
 }: ProductFormWrapperProps) {
   
   const initialData = {
@@ -34,6 +36,7 @@ export function ProductFormWrapper({
       initialData={initialData}
       isEditing={true}
       onAddCategory={onAddCategory}
+      onDeleteCategory={onDeleteCategory}
     />
   )
 }
