@@ -9,7 +9,6 @@ interface TopProductsProps {
 }
 
 export function TopProducts({ products }: TopProductsProps) {
-  // Pegar top 5 produtos mais clicados
   const topProducts = [...products]
     .sort((a, b) => (b.clicks_count || 0) - (a.clicks_count || 0))
     .slice(0, 5)
@@ -44,7 +43,13 @@ export function TopProducts({ products }: TopProductsProps) {
               </div>
               
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{product.title}</p>
+                {/* 🔥 TÍTULO COM TRUNCATE E TOOLTIP */}
+                <p 
+                  className="font-medium text-sm truncate"
+                  title={product.title}
+                >
+                  {product.title}
+                </p>
                 <p className="text-xs text-gray-500">
                   {product.clicks_count || 0} cliques
                 </p>

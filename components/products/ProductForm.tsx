@@ -30,23 +30,25 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
     image: null
   })
 
-  // 🔥 CORREÇÃO: Atualizar formulário quando initialData mudar
- useEffect(() => {
-  if (initialData) {
-    console.log("📥 ProductForm recebeu initialData:", initialData)
-    
-    setFormData({
-      title: initialData.title || "",
-      description: initialData.description || "",
-      original_price: initialData.original_price?.toString() || "",
-      discounted_price: initialData.discounted_price?.toString() || "",
-      product_url: initialData.product_url || "",
-      platform: initialData.platform || "",
-      category: initialData.category || "",
-      image: initialData.image || null
-    })
-  }
-}, [initialData])
+  useEffect(() => {
+    if (initialData) {
+      console.log("📥 ProductForm recebeu initialData:", initialData)
+      
+      const originalPrice = initialData.original_price ? Number(initialData.original_price).toFixed(2) : ""
+      const discountedPrice = initialData.discounted_price ? Number(initialData.discounted_price).toFixed(2) : ""
+      
+      setFormData({
+        title: initialData.title || "",
+        description: initialData.description || "",
+        original_price: originalPrice,
+        discounted_price: discountedPrice,
+        product_url: initialData.product_url || "",
+        platform: initialData.platform || "",
+        category: initialData.category || "",
+        image: initialData.image || null
+      })
+    }
+  }, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -55,7 +57,6 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
 
   const handleImageUpload = (file: File | null) => {
     console.log("Imagem selecionada:", file)
-    // TODO: Implementar upload real
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,7 +84,6 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <Link
           href="/products"
@@ -110,29 +110,33 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulário */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold mb-4">Informações do Produto</h2>
             
             <div className="space-y-4">
-              {/* Título */}
+              {/* 🔥 TÍTULO COM CONTADOR E LIMITE */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Título do Produto *
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Título do Produto *
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {formData.title.length}/100
+                  </span>
+                </div>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
                   required
+                  maxLength={100}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Ex: Headset Gamer RGB Wireless"
                 />
               </div>
 
-              {/* Descrição */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Descrição (opcional)
@@ -142,12 +146,15 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
+                  maxLength={500}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Descreva o produto..."
                 />
+                <div className="text-right text-xs text-gray-400 mt-1">
+                  {formData.description.length}/500
+                </div>
               </div>
 
-              {/* Preços */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -183,7 +190,6 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                 </div>
               </div>
 
-              {/* Link do Produto */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Link do Produto *
@@ -199,7 +205,6 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                 />
               </div>
 
-              {/* Plataforma e Categoria */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -232,7 +237,6 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
             </div>
           </div>
 
-          {/* Upload de Imagem */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <ImageUpload 
               onImageUpload={handleImageUpload}
@@ -241,7 +245,6 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
           </div>
         </div>
 
-        {/* Preview */}
         <div className="lg:col-span-1">
           <div className="sticky top-24">
             <h2 className="text-lg font-semibold mb-4">Preview</h2>

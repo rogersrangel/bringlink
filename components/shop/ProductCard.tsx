@@ -3,9 +3,7 @@
 import { motion } from "framer-motion"
 import { ShoppingCart, ExternalLink, Heart } from "lucide-react"
 import { useState } from "react"
-import Link from "next/link"
 import { TrackLink } from "@/components/tracking/TrackLink"
-
 
 interface ProductCardProps {
   product: {
@@ -27,13 +25,6 @@ interface ProductCardProps {
 export function ProductCard({ product, onTrackClick }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
-
-  const handleClick = () => {
-    if (onTrackClick) {
-      onTrackClick(product.id)
-    }
-    window.open(product.product_url, "_blank")
-  }
 
   const getPlatformIcon = () => {
     switch (product.platform) {
@@ -68,7 +59,6 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
           </div>
         )}
 
-        {/* Badge de desconto */}
         {product.discount_percentage > 0 && (
           <motion.div
             className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold"
@@ -80,7 +70,6 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
           </motion.div>
         )}
 
-        {/* Botão favorito */}
         <button
           onClick={() => setIsLiked(!isLiked)}
           className="absolute top-2 left-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
@@ -91,7 +80,6 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
           />
         </button>
 
-        {/* Platform badge */}
         {product.platform && (
           <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
             {getPlatformIcon()} {product.platform}
@@ -101,7 +89,11 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
 
       {/* Informações */}
       <div className="p-4">
-        <h3 className="font-semibold text-sm mb-2 line-clamp-2 min-h-[40px]">
+        {/* 🔥 TÍTULO COM LIMITE DE 2 LINHAS */}
+        <h3 
+          className="font-semibold text-sm mb-2 line-clamp-2 min-h-[40px]"
+          title={product.title}
+        >
           {product.title}
         </h3>
 
@@ -114,14 +106,12 @@ export function ProductCard({ product, onTrackClick }: ProductCardProps) {
           </span>
         </div>
 
-        {/* Clicks count */}
         {product.clicks_count !== undefined && (
           <div className="text-xs text-gray-500 mb-3">
             🔥 {product.clicks_count} cliques
           </div>
         )}
 
-        {/* Botão de compra */}
         <TrackLink
           productId={product.id}
           href={product.product_url}
