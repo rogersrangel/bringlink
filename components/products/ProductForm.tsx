@@ -31,26 +31,22 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
   })
 
   // 🔥 CORREÇÃO: Atualizar formulário quando initialData mudar
-  useEffect(() => {
-    if (initialData) {
-      console.log("📥 ProductForm recebeu initialData:", initialData)
-      
-      // Garantir que os preços sejam números válidos
-      const originalPrice = initialData.original_price ? Number(initialData.original_price).toFixed(2) : ""
-      const discountedPrice = initialData.discounted_price ? Number(initialData.discounted_price).toFixed(2) : ""
-      
-      setFormData({
-        title: initialData.title || "",
-        description: initialData.description || "",
-        original_price: originalPrice,
-        discounted_price: discountedPrice,
-        product_url: initialData.product_url || "",
-        platform: initialData.platform || "",
-        category: initialData.category || "",
-        image: initialData.image || null
-      })
-    }
-  }, [initialData]) // ← Executa sempre que initialData mudar
+ useEffect(() => {
+  if (initialData) {
+    console.log("📥 ProductForm recebeu initialData:", initialData)
+    
+    setFormData({
+      title: initialData.title || "",
+      description: initialData.description || "",
+      original_price: initialData.original_price?.toString() || "",
+      discounted_price: initialData.discounted_price?.toString() || "",
+      product_url: initialData.product_url || "",
+      platform: initialData.platform || "",
+      category: initialData.category || "",
+      image: initialData.image || null
+    })
+  }
+}, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target

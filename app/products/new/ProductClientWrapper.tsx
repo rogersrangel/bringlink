@@ -13,7 +13,7 @@ export function ProductClientWrapper({ categories, onSubmit }: ProductClientWrap
   const [scrapedData, setScrapedData] = useState<any>(null)
 
   const handleProductFetched = (data: any) => {
-    console.log("📦 Dados recebidos do scraper:", data)
+    console.log("📦 ProductClientWrapper recebeu:", data)
     setScrapedData(data)
   }
 

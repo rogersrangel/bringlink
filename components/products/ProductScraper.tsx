@@ -22,55 +22,46 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
     return 'other'
   }
 
-  const handleScrape = async () => {
-    if (!url) {
-      setError("Por favor, insira uma URL")
-      return
-    }
-
-    setLoading(true)
-    setError("")
-
-    try {
-      const response = await fetch('/api/scrape', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      })
-
-      const data = await response.json()
-      
-      if (data.error) {
-        setError(data.error)
-      } else {
-        // Formatar os dados para o formulário
-        let finalPrice = data.price
-        
-        // Ajustar preços do Mercado Livre e Shopee (vêm em centavos)
-        if (data.price && data.price > 1000) {
-          if (data.platform === 'mercadolivre' || data.platform === 'shopee') {
-            finalPrice = data.price / 100
-          }
-        }
-
-        const formattedData = {
-          title: data.title || '',
-          original_price: finalPrice || '',
-          discounted_price: finalPrice || '',
-          image: data.image || '',
-          platform: data.platform || detectPlatform(url)
-        }
-        
-        console.log("📤 Enviando dados formatados:", formattedData)
-        onProductFetched(formattedData)
-      }
-    } catch (err) {
-      setError("Erro ao buscar dados do produto")
-      console.error("Erro no scraper:", err)
-    } finally {
-      setLoading(false)
-    }
+const handleScrape = async () => {
+  if (!url) {
+    setError("Por favor, insira uma URL")
+    return
   }
+
+  setLoading(true)
+  setError("")
+
+  try {
+    const response = await fetch('/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    })
+
+    const data = await response.json()
+    
+    if (data.error) {
+      setError(data.error)
+    } else {
+      // 🔥 FORMATAR OS DADOS CORRETAMENTE PARA O FORMULÁRIO
+      const formattedData = {
+        title: data.title || '',
+        original_price: data.original_price || '',
+        discounted_price: data.discounted_price || '',
+        image: data.image || '',
+        platform: data.platform || detectPlatform(url)
+      }
+      
+      console.log("📤 Enviando dados formatados:", formattedData)
+      onProductFetched(formattedData)
+    }
+  } catch (err) {
+    setError("Erro ao buscar dados do produto")
+    console.error("Erro no scraper:", err)
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6">
