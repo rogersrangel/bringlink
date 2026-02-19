@@ -7,36 +7,42 @@ export async function POST(request: Request) {
     
     console.log('🎯 Scraping URL:', url)
     
-    // Buscar o HTML da página
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
     })
     
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    // Detectar plataforma
     const platform = detectPlatform(url)
     console.log('📦 Platform:', platform)
 
-    // Extrair dados
-    const product = {
-      title: extractTitle($, platform) || 
-             $('meta[property="og:title"]').attr('content') || 
-             $('meta[name="twitter:title"]').attr('content') ||
-             $('h1').first().text()?.trim() || 'Produto',
-      
-      image: extractImage($, platform),  // ← Usando função específica
-      
-      price: extractPrice($, platform),
-      
-      platform: platform
+    let product: any = {
+      title: null,
+      original_price: null,
+      discounted_price: null,
+      image: null,
+      platform
+    }
+
+    // Extrair dados baseado na plataforma
+    switch(platform) {
+      case 'amazon':
+        product = await extractAmazon($, product)
+        break
+      case 'mercadolivre':
+        product = await extractMercadoLivre($, product)
+        break
+      case 'shopee':
+        product = await extractShopee($, product)
+        break
+      case 'aliexpress':
+        product = await extractAliExpress($, product)
+        break
+      default:
+        product = await extractGeneric($, product)
     }
 
     console.log('✅ Produto extraído:', product)
@@ -47,241 +53,165 @@ export async function POST(request: Request) {
   }
 }
 
-// 🔥 NOVA FUNÇÃO PARA EXTRAIR IMAGEM
-function extractImage($: any, platform: string) {
-  console.log(`🔍 Buscando imagem para plataforma: ${platform}`)
+// 🟦 AMAZON
+async function extractAmazon($: any, product: any) {
+  console.log('🔍 Extraindo Amazon...')
   
-  // Seletores específicos por plataforma
-  const platformSelectors: Record<string, string[]> = {
-    amazon: [
-      '#landingImage',
-      '#imgBlkFront',
-      '.a-dynamic-image',
-      'img[data-old-hires]',
-      'img[data-a-image-name="landingImage"]'
-    ],
-    mercadolivre: [
-      '.ui-pdp-gallery__figure img',
-      '.ui-pdp-image',
-      'meta[property="og:image"]'
-    ],
-    shopee: [
-      'img[data-testid="image"]',
-      '._8Z2Upx img',
-      'meta[property="og:image"]'
-    ],
-    aliexpress: [
-      '.image-viewer__image',
-      '.magnifier-image',
-      'meta[property="og:image"]'
-    ]
-  }
+  // Título
+  product.title = $('#productTitle').text().trim() ||
+                  $('meta[property="og:title"]').attr('content') ||
+                  'Produto Amazon'
 
-  // Primeiro tenta seletores específicos da plataforma
-  const selectors = platformSelectors[platform] || []
+  // Imagem
+  product.image = $('#landingImage').attr('src') ||
+                  $('#imgBlkFront').attr('src') ||
+                  $('meta[property="og:image"]').attr('content')
+
+  // Preços
+  const priceWhole = $('.a-price-whole').first().text().replace(/[.,]/g, '')
+  const priceFraction = $('.a-price-fraction').first().text()
   
-  for (const selector of selectors) {
-    try {
-      const element = $(selector)
-      if (element.length) {
-        let imageUrl = element.attr('src') || 
-                      element.attr('data-src') || 
-                      element.attr('data-old-hires')
-        
-        if (imageUrl) {
-          // Corrige URLs relativas
-          if (imageUrl.startsWith('//')) {
-            imageUrl = 'https:' + imageUrl
-          }
-          console.log(`📸 Imagem encontrada com seletor "${selector}":`, imageUrl)
-          return imageUrl
-        }
-      }
-    } catch (e) {
-      console.log(`❌ Erro no seletor ${selector}:`, e)
+  if (priceWhole) {
+    const currentPrice = parseFloat(priceWhole + (priceFraction ? '.' + priceFraction : ''))
+    product.discounted_price = currentPrice
+    
+    // Tenta pegar o preço original (tachado)
+    const originalText = $('.a-price.a-text-price span.a-offscreen').first().text()
+    const originalMatch = originalText.match(/R?\$?\s*(\d+[.,]\d+)/)
+    if (originalMatch) {
+      product.original_price = parseFloat(originalMatch[1].replace(',', '.'))
+    } else {
+      product.original_price = currentPrice
     }
   }
 
-  // Fallback para meta tags
-  const metaImage = $('meta[property="og:image"]').attr('content') ||
-                    $('meta[name="twitter:image"]').attr('content')
-  
-  if (metaImage) {
-    console.log('📸 Imagem encontrada via meta tag:', metaImage)
-    return metaImage.startsWith('//') ? 'https:' + metaImage : metaImage
-  }
-
-  console.log('❌ Nenhuma imagem encontrada')
-  return null
+  return product
 }
 
-function extractTitle($: any, platform: string) {
-  console.log(`🔍 Buscando título para plataforma: ${platform}`)
+// 🟦 MERCADO LIVRE
+async function extractMercadoLivre($: any, product: any) {
+  console.log('🔍 Extraindo Mercado Livre...')
   
-  const platformSelectors: Record<string, string[]> = {
-    amazon: [
-      '#productTitle',
-      'span#productTitle',
-      'meta[property="og:title"]'
-    ],
-    mercadolivre: [
-      'h1.ui-pdp-title',
-      '.ui-pdp-title',
-      'meta[property="og:title"]'
-    ],
-    shopee: [
-      '[data-testid="product-title"]',
-      'div[class*="product-title"]',
-      'meta[property="og:title"]'
-    ],
-    aliexpress: [
-      'h1[class*="title"]',
-      '.product-title',
-      'meta[property="og:title"]'
-    ]
+  // Título
+  product.title = $('h1.ui-pdp-title').text().trim() ||
+                  $('meta[property="og:title"]').attr('content') ||
+                  'Produto Mercado Livre'
+
+  // Imagem
+  product.image = $('meta[property="og:image"]').attr('content') ||
+                  $('.ui-pdp-gallery__figure img').attr('src')
+
+  // Preços
+  const currentPriceElement = $('.andes-money-amount.ui-pdp-price__part').first()
+  const currentPriceText = currentPriceElement.find('.andes-money-amount__fraction').text().replace(/\./g, '')
+  
+  if (currentPriceText) {
+    product.discounted_price = parseFloat(currentPriceText) / 100 // Divide por 100 porque vem em centavos
   }
 
-  const selectors = platformSelectors[platform] || ['meta[property="og:title"]', 'h1']
-  
-  for (const selector of selectors) {
-    try {
-      const element = $(selector)
-      if (element.length) {
-        let title = element.attr('content') || element.text()
-        if (title) {
-          console.log(`📐 Título encontrado com seletor "${selector}":`, title.trim())
-          return title.trim()
-        }
-      }
-    } catch (e) {
-      console.log(`❌ Erro no seletor ${selector}:`, e)
-    }
+  // Preço original (tachado)
+  const originalPriceElement = $('.andes-money-amount--previous .andes-money-amount__fraction')
+  if (originalPriceElement.length) {
+    const originalText = originalPriceElement.text().replace(/\./g, '')
+    product.original_price = parseFloat(originalText) / 100
+  } else {
+    product.original_price = product.discounted_price
   }
-  
-  return null
+
+  return product
 }
 
-function extractPrice($: any, platform: string) {
-  console.log(`🔍 Buscando preço para plataforma: ${platform}`)
+// 🟦 SHOPEE
+async function extractShopee($: any, product: any) {
+  console.log('🔍 Extraindo Shopee...')
   
-  const platformSelectors: Record<string, string[]> = {
-    amazon: [
-      '.a-price .a-offscreen',
-      '#price_inside_buybox',
-      '.a-price-whole',
-      'span.a-price[data-a-size="xl"] span.a-offscreen',
-      'meta[property="product:price:amount"]'
-    ],
-    mercadolivre: [
-      '.andes-money-amount__fraction',
-      '.ui-pdp-price__second-line .andes-money-amount__fraction',
-      '[itemprop="price"]',
-      'meta[property="product:price:amount"]'
-    ],
-    shopee: [
-      '[data-testid="product-price"]',
-      '._3n5NQx span',
-      'div[class*="product-price"]',
-      'meta[itemprop="price"]',
-      'meta[property="product:price:amount"]'
-    ],
-    aliexpress: [
-      '.product-price-value',
-      '[itemprop="price"]',
-      '.sku-price',
-      '.pdp-price',
-      'div[class*="Price"] span',
-      'meta[property="product:price:amount"]'
-    ]
-  }
+  // Título
+  product.title = $('meta[property="og:title"]').attr('content') ||
+                  $('div[class*="product-title"]').text().trim() ||
+                  'Produto Shopee'
 
-  const selectors = platformSelectors[platform] || []
-  
-  const genericSelectors = [
-    'meta[property="product:price:amount"]',
-    'meta[itemprop="price"]',
-    'meta[name="price"]',
-    '.price',
-    '.product-price',
-    '[data-price]',
-    '.sale-price',
-    '.current-price'
-  ]
-  
-  const allSelectors = [...selectors, ...genericSelectors]
+  // Imagem
+  product.image = $('meta[property="og:image"]').attr('content') ||
+                  $('img[data-testid="image"]').attr('src')
 
-  for (const selector of allSelectors) {
-    try {
-      const element = $(selector)
-      if (element.length) {
-        let price = element.attr('content') || 
-                    element.attr('data-price') || 
-                    element.text()
-        
-        if (price) {
-          console.log(`📐 Seletor "${selector}" encontrado: "${price}"`)
-          
-          let cleaned = price
-            .replace(/[R$\s]/g, '')
-            .replace(/\./g, '')
-            .replace(',', '.')
-            .replace(/[^0-9.]/g, '')
-            .trim()
-          
-          // Ajuste para Amazon (remove textos duplicados)
-          if (platform === 'amazon') {
-            const amazonMatch = price.match(/(\d+[.,]\d{2})/)
-            if (amazonMatch) {
-              cleaned = amazonMatch[1].replace(',', '.')
-            }
-          }
-          
-          // Ajuste para Mercado Livre (preços em centavos)
-          if (platform === 'mercadolivre' && cleaned.length > 5) {
-            const mlMatch = price.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
-            if (mlMatch) {
-              cleaned = mlMatch[1].replace(/\./g, '').replace(',', '.')
-            }
-          }
-          
-          const match = cleaned.match(/(\d+(?:\.\d+)?)/)
-          if (match) {
-            const parsed = parseFloat(match[1])
-            if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
-              console.log(`✅ Preço encontrado: ${parsed}`)
-              return parsed
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.log(`❌ Erro no seletor ${selector}:`, e)
-    }
-  }
-  
-  // Fallback
-  console.log('🔍 Tentando fallback...')
+  // Preços - Shopee tem estrutura complexa com JavaScript
+  // Tenta encontrar no texto da página
   const bodyText = $('body').text()
-  const pricePatterns = [
-    /R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/,
-    /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))\s*reais/,
-    /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/
-  ]
   
-  for (const pattern of pricePatterns) {
-    const match = bodyText.match(pattern)
-    if (match) {
-      let found = match[1].replace(/\./g, '').replace(',', '.')
-      const parsed = parseFloat(found)
-      if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
-        console.log(`✅ Preço encontrado no fallback: ${parsed}`)
-        return parsed
-      }
+  // Procura por padrões de preço no formato "R$49,90" ou "R$ 49,90"
+  const priceMatch = bodyText.match(/R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
+  if (priceMatch) {
+    const price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'))
+    product.discounted_price = price
+    
+    // Procura por preço original (tachado) - geralmente aparece como "R$129,90" próximo ao preço
+    const originalMatch = bodyText.match(/R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))(?=[^]*?R?\$\s*\d+)/)
+    if (originalMatch) {
+      product.original_price = parseFloat(originalMatch[1].replace(/\./g, '').replace(',', '.'))
+    } else {
+      product.original_price = price
     }
   }
+
+  return product
+}
+
+// 🟦 ALIEXPRESS
+async function extractAliExpress($: any, product: any) {
+  console.log('🔍 Extraindo AliExpress...')
   
-  console.log('❌ Nenhum preço encontrado')
-  return null
+  // Título
+  product.title = $('meta[property="og:title"]').attr('content') ||
+                  $('h1[class*="title"]').text().trim() ||
+                  'Produto AliExpress'
+
+  // Imagem
+  product.image = $('meta[property="og:image"]').attr('content') ||
+                  $('.image-viewer__image').attr('src')
+
+  // Preços - AliExpress tem preço promocional e original
+  const discountPriceElement = $('.product-price-value').first()
+  const originalPriceElement = $('.original-price').first()
+  
+  if (discountPriceElement.length) {
+    const priceText = discountPriceElement.text().replace(/[^\d.,]/g, '')
+    product.discounted_price = parseFloat(priceText.replace(',', '.'))
+  }
+  
+  if (originalPriceElement.length) {
+    const originalText = originalPriceElement.text().replace(/[^\d.,]/g, '')
+    product.original_price = parseFloat(originalText.replace(',', '.'))
+  } else {
+    product.original_price = product.discounted_price
+  }
+
+  // Fallback: procurar no texto
+  if (!product.discounted_price) {
+    const bodyText = $('body').text()
+    const priceMatch = bodyText.match(/R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
+    if (priceMatch) {
+      product.discounted_price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'))
+      product.original_price = product.discounted_price
+    }
+  }
+
+  return product
+}
+
+// 🟦 GENÉRICO (fallback)
+async function extractGeneric($: any, product: any) {
+  product.title = $('meta[property="og:title"]').attr('content') || 'Produto'
+  product.image = $('meta[property="og:image"]').attr('content')
+  
+  const bodyText = $('body').text()
+  const priceMatch = bodyText.match(/R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
+  if (priceMatch) {
+    const price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'))
+    product.discounted_price = price
+    product.original_price = price
+  }
+  
+  return product
 }
 
 function detectPlatform(url: string) {
