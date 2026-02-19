@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 
 interface ProductActionsProps {
   productId: string
+  username: string
   isActive: boolean
   onToggleStatus: (productId: string) => void
   onDelete: (productId: string) => void
@@ -15,7 +16,8 @@ interface ProductActionsProps {
 }
 
 export function ProductActions({ 
-  productId, 
+  productId,
+  username, 
   isActive, 
   onToggleStatus, 
   onDelete, 
@@ -69,7 +71,7 @@ export function ProductActions({
 
   return (
     <div className="flex items-center gap-2">
-      <Link href={`/shop/${productId}`} target="_blank">
+      <Link href={`/shop/${username}`} target="_blank">
         <motion.button
           className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
           whileHover={{ scale: 1.1 }}

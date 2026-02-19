@@ -16,7 +16,6 @@ async function toggleProductStatus(productId: string) {
   
   if (!user) return
 
-  // Buscar status atual
   const { data: product } = await supabase
     .from('products')
     .select('is_active')
@@ -25,7 +24,6 @@ async function toggleProductStatus(productId: string) {
 
   if (!product) return
 
-  // Atualizar status (inverte o status atual)
   await supabase
     .from('products')
     .update({ is_active: !product.is_active })
@@ -45,7 +43,6 @@ async function deleteProduct(productId: string) {
     return
   }
 
-  // Verificar se o produto pertence ao usuário
   const { data: product, error: fetchError } = await supabase
     .from('products')
     .select('user_id')
@@ -58,11 +55,10 @@ async function deleteProduct(productId: string) {
   }
 
   if (product.user_id !== user.id) {
-    console.error("Usuário não tem permissão para deletar este produto")
+    console.error("Usuário não tem permissão")
     return
   }
 
-  // Deletar produto
   const { error } = await supabase
     .from('products')
     .delete()
@@ -76,7 +72,6 @@ async function deleteProduct(productId: string) {
   revalidatePath('/products')
 }
 
-// 🔥 FUNÇÃO CORRIGIDA (removida a duplicação)
 async function duplicateProduct(productId: string) {
   "use server"
   
@@ -91,7 +86,6 @@ async function duplicateProduct(productId: string) {
   }
   console.log("🟢 Usuário OK:", user.id)
 
-  // Buscar produto original
   const { data: original, error: fetchError } = await supabase
     .from('products')
     .select('*')
@@ -109,7 +103,6 @@ async function duplicateProduct(productId: string) {
     return
   }
 
-  // 🔥 CORREÇÃO AQUI: remove discount_percentage que é gerado automaticamente
   const { id, created_at, updated_at, clicks_count, discount_percentage, ...productData } = original
   console.log("🟡 Dados para cópia:", productData)
 
@@ -140,10 +133,24 @@ export default async function ProductsPage() {
     redirect("/login")
   }
 
-  // Buscar produtos do usuário
+  // 🔥 1. Buscar o username do usuário logado (para fallback)
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single()
+
+  const username = userProfile?.username || user.email?.split('@')[0] || 'usuario'
+
+  // 🔥 2. Buscar produtos com os dados do usuário (para o username de cada produto)
   const { data: products } = await supabase
     .from('products')
-    .select('*')
+    .select(`
+      *,
+      user:profiles!products_user_id_fkey (
+        username
+      )
+    `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -207,12 +214,13 @@ export default async function ProductsPage() {
           platforms={platforms}
         />
 
-        {/* Tabela de produtos */}
+        {/* Tabela de produtos - AGORA COM USERNAME */}
         <ProductTable
           products={products || []}
           onToggleStatus={toggleProductStatus}
           onDelete={deleteProduct}
           onDuplicate={duplicateProduct}
+          userUsername={username} // ← PASSA O USERNAME DO USUÁRIO LOGADO
         />
       </div>
     </div>
