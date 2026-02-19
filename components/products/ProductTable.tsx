@@ -19,7 +19,7 @@ interface Product {
   is_featured: boolean
   clicks_count: number
   created_at: string
-  user?: {  // ← ADICIONE ESTA LINHA
+  profiles?: {  // ← MUDOU DE "user" PARA "profiles" (para combinar com a query)
     username: string
   }
 }
@@ -29,21 +29,28 @@ interface ProductTableProps {
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
   onDuplicate?: (id: string) => void
-  userUsername?: string // ← FALLBACK (opcional)
+  userUsername?: string
 }
 
 type SortField = "title" | "price" | "discount" | "clicks" | "created_at"
 type SortOrder = "asc" | "desc"
 
-export function ProductTable({ 
-  products, 
-  onToggleStatus, 
-  onDelete, 
+export function ProductTable({
+  products,
+  onToggleStatus,
+  onDelete,
   onDuplicate,
-  userUsername // ← RECEBE O USERNAME DO USUÁRIO LOGADO
+  userUsername
 }: ProductTableProps) {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
+
+  // 🔥 ADICIONE LOG PARA DEBUG
+  console.log('📦 Products recebidos:', products.map(p => ({
+    id: p.id,
+    title: p.title,
+    username: p.profiles?.username
+  })))
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -56,7 +63,7 @@ export function ProductTable({
 
   const sortedProducts = [...products].sort((a, b) => {
     let comparison = 0
-    
+
     switch (sortField) {
       case "title":
         comparison = a.title.localeCompare(b.title)
@@ -74,12 +81,12 @@ export function ProductTable({
         comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         break
     }
-    
+
     return sortOrder === "asc" ? comparison : -comparison
   })
 
   const getPlatformIcon = (platform: string | null) => {
-    switch(platform) {
+    switch (platform) {
       case "shopee": return "🛒"
       case "aliexpress": return "📦"
       case "mercadolivre": return "🛍️"
@@ -99,7 +106,7 @@ export function ProductTable({
         <Package size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-700 mb-2">Nenhum produto ainda</h3>
         <p className="text-gray-500 mb-6">Comece adicionando seu primeiro produto</p>
-        <Link 
+        <Link
           href="/products/new"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors"
         >
@@ -165,7 +172,7 @@ export function ProductTable({
               </th>
             </tr>
           </thead>
-          
+
           <tbody className="divide-y divide-gray-100">
             <AnimatePresence>
               {sortedProducts.map((product, index) => (
@@ -187,7 +194,7 @@ export function ProductTable({
                         )}
                       </div>
                       <div>
-                        <Link 
+                        <Link
                           href={`/products/${product.id}/edit`}
                           className="font-medium text-gray-900 hover:text-purple-600 hover:underline block truncate"
                         >
@@ -199,7 +206,7 @@ export function ProductTable({
                       </div>
                     </div>
                   </td>
-                  
+
                   <td className="px-4 py-3">
                     <div>
                       <span className="font-semibold text-green-600">
@@ -210,30 +217,29 @@ export function ProductTable({
                       </span>
                     </div>
                   </td>
-                  
+
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium">
                       -{product.discount_percentage}%
                     </span>
                   </td>
-                  
+
                   <td className="px-4 py-3">
                     <span className="text-sm capitalize">
                       {product.platform || "Outra"}
                     </span>
                   </td>
-                  
+
                   <td className="px-4 py-3">
                     <span className="font-medium">{product.clicks_count}</span>
                   </td>
-                  
+
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        product.is_active
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.is_active
                           ? "bg-green-100 text-green-700"
                           : "bg-gray-100 text-gray-600"
-                      }`}>
+                        }`}>
                         {product.is_active ? "Ativo" : "Inativo"}
                       </span>
                       {product.is_featured && (
@@ -243,15 +249,16 @@ export function ProductTable({
                       )}
                     </div>
                   </td>
-                  
+
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {new Date(product.created_at).toLocaleDateString('pt-BR')}
                   </td>
-                  
+
                   <td className="px-4 py-3 text-right">
                     <ProductActions
                       productId={product.id}
-                      username={product.user?.username || userUsername || ''}
+                      // 🔥 AGORA USA O NOME CORRETO: "profiles"
+                      username={product.profiles?.username || userUsername || ''}
                       isActive={product.is_active}
                       onToggleStatus={onToggleStatus}
                       onDelete={onDelete}

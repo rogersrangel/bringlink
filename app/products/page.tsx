@@ -133,26 +133,27 @@ export default async function ProductsPage() {
     redirect("/login")
   }
 
-  // 🔥 1. Buscar o username do usuário logado (para fallback)
-  const { data: userProfile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single()
+  // Buscar o username do usuário logado
+const { data: userProfile } = await supabase
+  .from('profiles')
+  .select('username')
+  .eq('id', user.id)
+  .single()
 
-  const username = userProfile?.username || user.email?.split('@')[0] || 'usuario'
+const username = userProfile?.username || user.email?.split('@')[0] || 'usuario'
 
-  // 🔥 2. Buscar produtos com os dados do usuário (para o username de cada produto)
-  const { data: products } = await supabase
-    .from('products')
-    .select(`
-      *,
-      user:profiles!products_user_id_fkey (
-        username
-      )
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+// 🔥 CORREÇÃO: usar "profiles" em vez de "user"
+const { data: products } = await supabase
+  .from('products')
+  .select(`
+    *,
+    profiles!products_user_id_fkey (
+      username
+    )
+  `)
+  .eq('user_id', user.id)
+  .order('created_at', { ascending: false })
+
 
   // Calcular estatísticas
   const stats = {
