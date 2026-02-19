@@ -19,7 +19,6 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
     if (url.includes('aliexpress')) return 'aliexpress'
     if (url.includes('mercadolivre') || url.includes('mercadolibre')) return 'mercadolivre'
     if (url.includes('amazon')) return 'amazon'
-    if (url.includes('amazon')) return 'amazon'
     return 'other'
   }
 
@@ -33,7 +32,6 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
     setError("")
 
     try {
-      // 🔥 AGORA USA A API REAL
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,12 +43,26 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
       if (data.error) {
         setError(data.error)
       } else {
-        onProductFetched({
-          title: data.title,
-          price: data.price || Math.floor(Math.random() * 500) + 100,
-          image: data.image || `https://placehold.co/300x300/8b5cf6/white?text=${data.platform}`,
+        // Formatar os dados para o formulário
+        let finalPrice = data.price
+        
+        // Ajustar preços do Mercado Livre e Shopee (vêm em centavos)
+        if (data.price && data.price > 1000) {
+          if (data.platform === 'mercadolivre' || data.platform === 'shopee') {
+            finalPrice = data.price / 100
+          }
+        }
+
+        const formattedData = {
+          title: data.title || '',
+          original_price: finalPrice || '',
+          discounted_price: finalPrice || '',
+          image: data.image || '',
           platform: data.platform || detectPlatform(url)
-        })
+        }
+        
+        console.log("📤 Enviando dados formatados:", formattedData)
+        onProductFetched(formattedData)
       }
     } catch (err) {
       setError("Erro ao buscar dados do produto")
@@ -64,7 +76,7 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
     <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6">
       <h3 className="text-lg font-semibold mb-2">Importar de Link</h3>
       <p className="text-sm text-gray-600 mb-4">
-        Cole o link do produto da Shopee, AliExpress ou Mercado Livre
+        Cole o link do produto da Shopee, AliExpress, Mercado Livre ou Amazon
       </p>
 
       <div className="flex gap-2">
@@ -73,7 +85,7 @@ export function ProductScraper({ onProductFetched }: ProductScraperProps) {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://shopee.com.br/product/123..."
+            placeholder="https://www.mercadolivre.com.br/produto-123..."
             className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
             disabled={loading}
           />

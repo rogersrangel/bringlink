@@ -32,9 +32,7 @@ export async function POST(request: Request) {
              $('meta[name="twitter:title"]').attr('content') ||
              $('h1').first().text()?.trim() || 'Produto',
       
-      image: $('meta[property="og:image"]').attr('content') ||
-             $('meta[name="twitter:image"]').attr('content') ||
-             $('img').first().attr('src'),
+      image: extractImage($, platform),  // ← Usando função específica
       
       price: extractPrice($, platform),
       
@@ -47,6 +45,74 @@ export async function POST(request: Request) {
     console.error('❌ Erro no scraping:', error)
     return NextResponse.json({ error: 'Erro ao buscar dados' }, { status: 500 })
   }
+}
+
+// 🔥 NOVA FUNÇÃO PARA EXTRAIR IMAGEM
+function extractImage($: any, platform: string) {
+  console.log(`🔍 Buscando imagem para plataforma: ${platform}`)
+  
+  // Seletores específicos por plataforma
+  const platformSelectors: Record<string, string[]> = {
+    amazon: [
+      '#landingImage',
+      '#imgBlkFront',
+      '.a-dynamic-image',
+      'img[data-old-hires]',
+      'img[data-a-image-name="landingImage"]'
+    ],
+    mercadolivre: [
+      '.ui-pdp-gallery__figure img',
+      '.ui-pdp-image',
+      'meta[property="og:image"]'
+    ],
+    shopee: [
+      'img[data-testid="image"]',
+      '._8Z2Upx img',
+      'meta[property="og:image"]'
+    ],
+    aliexpress: [
+      '.image-viewer__image',
+      '.magnifier-image',
+      'meta[property="og:image"]'
+    ]
+  }
+
+  // Primeiro tenta seletores específicos da plataforma
+  const selectors = platformSelectors[platform] || []
+  
+  for (const selector of selectors) {
+    try {
+      const element = $(selector)
+      if (element.length) {
+        let imageUrl = element.attr('src') || 
+                      element.attr('data-src') || 
+                      element.attr('data-old-hires')
+        
+        if (imageUrl) {
+          // Corrige URLs relativas
+          if (imageUrl.startsWith('//')) {
+            imageUrl = 'https:' + imageUrl
+          }
+          console.log(`📸 Imagem encontrada com seletor "${selector}":`, imageUrl)
+          return imageUrl
+        }
+      }
+    } catch (e) {
+      console.log(`❌ Erro no seletor ${selector}:`, e)
+    }
+  }
+
+  // Fallback para meta tags
+  const metaImage = $('meta[property="og:image"]').attr('content') ||
+                    $('meta[name="twitter:image"]').attr('content')
+  
+  if (metaImage) {
+    console.log('📸 Imagem encontrada via meta tag:', metaImage)
+    return metaImage.startsWith('//') ? 'https:' + metaImage : metaImage
+  }
+
+  console.log('❌ Nenhuma imagem encontrada')
+  return null
 }
 
 function extractTitle($: any, platform: string) {
@@ -98,7 +164,6 @@ function extractTitle($: any, platform: string) {
 function extractPrice($: any, platform: string) {
   console.log(`🔍 Buscando preço para plataforma: ${platform}`)
   
-  // Seletores específicos por plataforma
   const platformSelectors: Record<string, string[]> = {
     amazon: [
       '.a-price .a-offscreen',
@@ -118,8 +183,7 @@ function extractPrice($: any, platform: string) {
       '._3n5NQx span',
       'div[class*="product-price"]',
       'meta[itemprop="price"]',
-      'meta[property="product:price:amount"]',
-      '.flex.items-center > div'
+      'meta[property="product:price:amount"]'
     ],
     aliexpress: [
       '.product-price-value',
@@ -127,15 +191,12 @@ function extractPrice($: any, platform: string) {
       '.sku-price',
       '.pdp-price',
       'div[class*="Price"] span',
-      'meta[property="product:price:amount"]',
-      'span[class*="price"]'
+      'meta[property="product:price:amount"]'
     ]
   }
 
-  // Usa seletores específicos da plataforma primeiro
   const selectors = platformSelectors[platform] || []
   
-  // Adiciona seletores genéricos como fallback
   const genericSelectors = [
     'meta[property="product:price:amount"]',
     'meta[itemprop="price"]',
@@ -153,24 +214,21 @@ function extractPrice($: any, platform: string) {
     try {
       const element = $(selector)
       if (element.length) {
-        // Tenta pegar atributo 'content' primeiro
         let price = element.attr('content') || 
                     element.attr('data-price') || 
-                    element.attr('data-testid') === 'product-price' ? element.text() : 
                     element.text()
         
         if (price) {
           console.log(`📐 Seletor "${selector}" encontrado: "${price}"`)
           
-          // 🔥 NOVO: Limpeza mais inteligente para preços
           let cleaned = price
-            .replace(/[R$\s]/g, '')        // Remove R$ e espaços
-            .replace(/\./g, '')             // Remove pontos dos milhares
-            .replace(',', '.')               // Troca vírgula decimal por ponto
-            .replace(/[^0-9.]/g, '')         // Remove qualquer coisa que não seja número ou ponto
+            .replace(/[R$\s]/g, '')
+            .replace(/\./g, '')
+            .replace(',', '.')
+            .replace(/[^0-9.]/g, '')
             .trim()
           
-          // 🔥 CORREÇÃO PARA AMAZON: Remove números duplicados
+          // Ajuste para Amazon (remove textos duplicados)
           if (platform === 'amazon') {
             const amazonMatch = price.match(/(\d+[.,]\d{2})/)
             if (amazonMatch) {
@@ -178,19 +236,18 @@ function extractPrice($: any, platform: string) {
             }
           }
           
-          // 🔥 CORREÇÃO PARA MERCADO LIVRE: Preços grandes
-          if (platform === 'mercadolivre' && cleaned.length > 10) {
+          // Ajuste para Mercado Livre (preços em centavos)
+          if (platform === 'mercadolivre' && cleaned.length > 5) {
             const mlMatch = price.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
             if (mlMatch) {
               cleaned = mlMatch[1].replace(/\./g, '').replace(',', '.')
             }
           }
           
-          // Pega o primeiro número válido
           const match = cleaned.match(/(\d+(?:\.\d+)?)/)
           if (match) {
             const parsed = parseFloat(match[1])
-            if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) { // Limite de 1 milhão
+            if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
               console.log(`✅ Preço encontrado: ${parsed}`)
               return parsed
             }
@@ -202,11 +259,9 @@ function extractPrice($: any, platform: string) {
     }
   }
   
-  // Fallback: procurar qualquer número no texto da página
+  // Fallback
   console.log('🔍 Tentando fallback...')
   const bodyText = $('body').text()
-  
-  // Padrões de preço em português
   const pricePatterns = [
     /R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/,
     /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))\s*reais/,

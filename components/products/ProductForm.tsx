@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Save, ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { ImageUpload } from "./ImageUpload"
 import { CategorySelect } from "./CategorySelect"
 import { ProductPreview } from "./ProductPreview"
-import { useRouter } from "next/navigation"  
 
 interface ProductFormProps {
   initialData?: any
@@ -20,36 +20,41 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    title: initialData?.title || "",
-    description: initialData?.description || "",
-    original_price: initialData?.original_price || "",
-    discounted_price: initialData?.discounted_price || "",
-    product_url: initialData?.product_url || "",
-    platform: initialData?.platform || "",
-    category: initialData?.category || "",
-    image: initialData?.image || null
+    title: "",
+    description: "",
+    original_price: "",
+    discounted_price: "",
+    product_url: "",
+    platform: "",
+    category: "",
+    image: null
   })
 
-  // Atualizar quando initialData mudar
+  // 🔥 CORREÇÃO: Atualizar formulário quando initialData mudar
   useEffect(() => {
     if (initialData) {
+      console.log("📥 ProductForm recebeu initialData:", initialData)
+      
+      // Garantir que os preços sejam números válidos
+      const originalPrice = initialData.original_price ? Number(initialData.original_price).toFixed(2) : ""
+      const discountedPrice = initialData.discounted_price ? Number(initialData.discounted_price).toFixed(2) : ""
+      
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
-        original_price: initialData.original_price || "",
-        discounted_price: initialData.discounted_price || "",
+        original_price: originalPrice,
+        discounted_price: discountedPrice,
         product_url: initialData.product_url || "",
         platform: initialData.platform || "",
         category: initialData.category || "",
         image: initialData.image || null
       })
     }
-  }, [initialData])
+  }, [initialData]) // ← Executa sempre que initialData mudar
 
-  // 🔥 FUNÇÃO CORRIGIDA - Aceita todos os tipos de elemento
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleImageUpload = (file: File | null) => {
@@ -207,7 +212,7 @@ export function ProductForm({ initialData, categories, onSubmit, isEditing }: Pr
                   <select
                     name="platform"
                     value={formData.platform}
-                    onChange={handleChange}  // ← AGORA FUNCIONA!
+                    onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Selecione</option>
