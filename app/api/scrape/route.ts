@@ -198,44 +198,156 @@ function extractMercadoLivre($: any, product: any) {
   return product
 }
 
-// 🟦 SHOPEE - CORRIGIDO (extrai do HTML)
+// 🟦 SHOPEE - VERSÃO HIPER-OTIMIZADA PARA ENCONTRAR JSON
 function extractShopee($: any, product: any, html: string) {
-  console.log('🔍 Extraindo Shopee...')
-  
-  // Título
+  console.log('🔍 Extraindo Shopee (modo JSON)...')
+
+  // 1️⃣ TÍTULO: Tenta encontrar nos meta tags ou no HTML
   product.title = $('meta[property="og:title"]').attr('content') ||
+                  $('meta[name="title"]').attr('content') ||
                   $('div[class*="product-title"]').text().trim() ||
-                  $('div[data-testid="product-title"]').text().trim() ||
                   $('h1').first().text().trim() ||
                   'Produto Shopee'
 
-  // Imagem
+  // 2️⃣ IMAGEM: Tenta encontrar nos meta tags ou no HTML
   product.image = $('meta[property="og:image"]').attr('content') ||
+                  $('meta[name="twitter:image"]').attr('content') ||
                   $('img[data-testid="image"]').attr('src') ||
                   $('img[class*="product-image"]').attr('src')
 
-  // 🔥 EXTRAIR PREÇO DO HTML (Shopee tem dados em JSON)
-  // Procura por padrões de preço no formato "price": 4990 (centavos)
-  const priceMatch = html.match(/"price":\s*(\d+)/) || 
-                     html.match(/"price_min":\s*(\d+)/) ||
-                     html.match(/"price_max":\s*(\d+)/)
-  
-  if (priceMatch) {
-    const priceInCents = parseInt(priceMatch[1])
-    product.discounted_price = priceInCents / 100
-    product.original_price = product.discounted_price
+  // 3️⃣ PREÇOS: PROCURA POR DADOS JSON NO HTML (ESTRATÉGIA PRINCIPAL)
+  console.log('🔍 Buscando blocos JSON no HTML...')
+
+  // Padrões para encontrar blocos de dados da Shopee (geralmente em <script>)
+  const jsonPatterns = [
+    /window\.__initialData__\s*=\s*({.*?});/s,           // Dados iniciais
+    /<script[^>]*>window\.__INITIAL_STATE__\s*=\s*({.*?});<\/script>/s, // Estado inicial
+    /<script[^>]*id="__NEXT_DATA__"[^>]*>({.*?})<\/script>/s, // Dados do Next.js (se usarem)
+    /"data"\s*:\s*({.*?})/s,                               // Objeto "data" genérico
+    /"product"\s*:\s*({.*?})/s,                            // Objeto "product"
+    /"item"\s*:\s*({.*?})/s,                               // Objeto "item"
+    /"price"\s*:\s*(\d+)/g,                                // Preço numérico (global)
+    /"price_min"\s*:\s*(\d+)/g,
+    /"price_max"\s*:\s*(\d+)/g,
+    /"original_price"\s*:\s*(\d+)/g,
+    /"discounted_price"\s*:\s*(\d+)/g,
+  ]
+
+  let extractedPrices: { original: number | null, discounted: number | null } = {
+    original: null,
+    discounted: null
   }
 
-  // Se não encontrou no JSON, tenta no texto
-  if (!product.discounted_price) {
-    const bodyText = $('body').text()
-    const textMatch = bodyText.match(/R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
-    if (textMatch) {
-      const price = parseFloat(textMatch[1].replace(/\./g, '').replace(',', '.'))
-      product.discounted_price = price
-      product.original_price = price
+  // Tenta cada padrão de expressão regular
+  for (const pattern of jsonPatterns) {
+    // Usa 's' (dotall) para que '.' capture quebras de linha
+    const regex = new RegExp(pattern, 'gis')
+    let match: RegExpExecArray | null
+
+    // eslint-disable-next-line no-cond-assign
+    while ((match = regex.exec(html)) !== null) {
+      try {
+        // Se o padrão capturou um grupo, tenta fazer o parse
+        if (match[1]) {
+          // Tenta parsear como JSON, mas pode ser um trecho solto
+          let jsonData = match[1]
+          // Limpeza básica para tentar tornar o JSON válido (se necessário)
+          // jsonData = jsonData.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":') // Opcional: garante que as chaves tenham aspas
+          
+          // Tenta parsear o objeto JSON
+          const data = JSON.parse(jsonData)
+          
+          // Função recursiva para procurar preços no objeto
+          const findPrices = (obj: any) => {
+            if (typeof obj === 'object' && obj !== null) {
+              // Procura por campos comuns de preço
+              if (obj.price && typeof obj.price === 'number') {
+                extractedPrices.discounted = obj.price / 100000 // Ajuste de escala
+              }
+              if (obj.price_min && typeof obj.price_min === 'number') {
+                extractedPrices.discounted = obj.price_min / 100000
+              }
+              if (obj.price_max && typeof obj.price_max === 'number') {
+                extractedPrices.original = obj.price_max / 100000
+              }
+              if (obj.original_price && typeof obj.original_price === 'number') {
+                extractedPrices.original = obj.original_price / 100000
+              }
+              if (obj.discounted_price && typeof obj.discounted_price === 'number') {
+                extractedPrices.discounted = obj.discounted_price / 100000
+              }
+              
+              // Se já encontrou ambos, para
+              if (extractedPrices.original && extractedPrices.discounted) return
+              
+              // Recursão para objetos filhos
+              for (const key in obj) {
+                findPrices(obj[key])
+              }
+            } else if (Array.isArray(obj)) {
+              obj.forEach(item => findPrices(item))
+            }
+          }
+          
+          findPrices(data)
+          
+          if (extractedPrices.discounted || extractedPrices.original) {
+            console.log('💰 Preços encontrados via JSON parsing')
+          }
+        }
+      } catch (e) {
+        // Se o parse falhar, tenta extrair números diretamente do match
+        console.log('⚠️ Falha no parse JSON, tentando extrair números do padrão...')
+        const numberMatch = match[1].match(/(\d+)/)
+        if (numberMatch) {
+          const priceNum = parseInt(numberMatch[1]) / 100000
+          if (pattern.toString().includes('original')) {
+            extractedPrices.original = priceNum
+          } else if (pattern.toString().includes('discounted')) {
+            extractedPrices.discounted = priceNum
+          } else if (!extractedPrices.discounted) {
+            extractedPrices.discounted = priceNum
+          } else if (!extractedPrices.original) {
+            extractedPrices.original = priceNum
+          }
+          console.log(`💰 Preço numérico extraído do padrão: ${priceNum}`)
+        }
+      }
     }
   }
+
+  // Se encontrou preços, atribui ao produto
+  if (extractedPrices.discounted) {
+    product.discounted_price = extractedPrices.discounted
+    product.original_price = extractedPrices.original || extractedPrices.discounted
+    console.log(`💰 Preço com desconto definido: ${product.discounted_price}`)
+    if (extractedPrices.original) {
+      console.log(`💰 Preço original definido: ${product.original_price}`)
+    }
+  }
+
+  // 4️⃣ FALLBACK: Se não encontrou nos padrões, tenta no texto da página
+  if (!product.discounted_price) {
+    console.log('🔍 Tentando fallback no texto da página...')
+    const bodyText = $('body').text()
+    
+    // Procura por "R$ 49,90" ou "R$49,90"
+    const priceMatch = bodyText.match(/R?\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/)
+    if (priceMatch) {
+      const price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'))
+      product.discounted_price = price
+      product.original_price = price
+      console.log(`💰 Preço encontrado no fallback: ${price}`)
+    }
+  }
+
+  // Log do resultado final
+  console.log('✅ Resultado da extração Shopee:', {
+    title: product.title,
+    original_price: product.original_price,
+    discounted_price: product.discounted_price,
+    image: product.image ? 'encontrada' : 'não encontrada'
+  })
 
   return product
 }
