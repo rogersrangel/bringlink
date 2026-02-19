@@ -6,9 +6,16 @@ interface ProductFormWrapperProps {
   product: any
   categories: string[]
   onSubmit: (data: any) => Promise<void>
+  onAddCategory?: (category: string) => Promise<void>
 }
 
-export function ProductFormWrapper({ product, categories, onSubmit }: ProductFormWrapperProps) {
+export function ProductFormWrapper({ 
+  product, 
+  categories, 
+  onSubmit,
+  onAddCategory 
+}: ProductFormWrapperProps) {
+  
   const initialData = {
     title: product.title,
     description: product.description || "",
@@ -21,11 +28,12 @@ export function ProductFormWrapper({ product, categories, onSubmit }: ProductFor
   }
 
   return (
-    <ProductForm
+    <ProductForm 
       categories={categories}
       onSubmit={onSubmit}
       initialData={initialData}
       isEditing={true}
+      onAddCategory={onAddCategory}
     />
   )
 }

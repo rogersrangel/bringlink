@@ -19,7 +19,7 @@ interface Product {
   is_featured: boolean
   clicks_count: number
   created_at: string
-  profiles?: {  // ← MUDOU DE "user" PARA "profiles" (para combinar com a query)
+  profiles?: {  // ← RELACIONAMENTO COM PROFILES
     username: string
   }
 }
@@ -29,7 +29,7 @@ interface ProductTableProps {
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
   onDuplicate?: (id: string) => void
-  userUsername?: string
+  userUsername?: string // ← FALLBACK
 }
 
 type SortField = "title" | "price" | "discount" | "clicks" | "created_at"
@@ -44,13 +44,6 @@ export function ProductTable({
 }: ProductTableProps) {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
-
-  // 🔥 ADICIONE LOG PARA DEBUG
-  console.log('📦 Products recebidos:', products.map(p => ({
-    id: p.id,
-    title: p.title,
-    username: p.profiles?.username
-  })))
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -100,6 +93,7 @@ export function ProductTable({
     return sortOrder === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
   }
 
+  // Estado de lista vazia
   if (products.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
@@ -184,6 +178,7 @@ export function ProductTable({
                   transition={{ delay: index * 0.03 }}
                   className="hover:bg-gray-50 transition-colors"
                 >
+                  {/* Coluna Produto (com imagem e título truncado) */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-xl shrink-0">
@@ -193,11 +188,11 @@ export function ProductTable({
                           getPlatformIcon(product.platform)
                         )}
                       </div>
-                      <div className="min-w-0"> {/* ← ESSA DIV É CRUCIAL */}
+                      <div className="min-w-0">
                         <Link
                           href={`/products/${product.id}/edit`}
                           className="font-medium text-gray-900 hover:text-purple-600 hover:underline block truncate max-w-[200px] lg:max-w-[300px]"
-                          title={product.title} // ← Mostra o texto completo no hover
+                          title={product.title}
                         >
                           {product.title}
                         </Link>
@@ -208,6 +203,7 @@ export function ProductTable({
                     </div>
                   </td>
 
+                  {/* Preço */}
                   <td className="px-4 py-3">
                     <div>
                       <span className="font-semibold text-green-600">
@@ -219,28 +215,33 @@ export function ProductTable({
                     </div>
                   </td>
 
+                  {/* Desconto */}
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium">
                       -{product.discount_percentage}%
                     </span>
                   </td>
 
+                  {/* Plataforma */}
                   <td className="px-4 py-3">
                     <span className="text-sm capitalize">
                       {product.platform || "Outra"}
                     </span>
                   </td>
 
+                  {/* Cliques */}
                   <td className="px-4 py-3">
                     <span className="font-medium">{product.clicks_count}</span>
                   </td>
 
+                  {/* Status */}
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.is_active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-600"
-                        }`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        product.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}>
                         {product.is_active ? "Ativo" : "Inativo"}
                       </span>
                       {product.is_featured && (
@@ -251,14 +252,15 @@ export function ProductTable({
                     </div>
                   </td>
 
+                  {/* Data */}
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {new Date(product.created_at).toLocaleDateString('pt-BR')}
                   </td>
 
+                  {/* Ações */}
                   <td className="px-4 py-3 text-right">
                     <ProductActions
                       productId={product.id}
-                      // 🔥 AGORA USA O NOME CORRETO: "profiles"
                       username={product.profiles?.username || userUsername || ''}
                       isActive={product.is_active}
                       onToggleStatus={onToggleStatus}

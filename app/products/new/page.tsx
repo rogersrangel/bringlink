@@ -25,9 +25,7 @@ export default async function NewProductPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      redirect("/login")
-    }
+    if (!user) redirect("/login")
 
     const originalPrice = parseFloat(formData.original_price)
     const discountedPrice = parseFloat(formData.discounted_price)
@@ -54,12 +52,11 @@ export default async function NewProductPage() {
     }
   }
 
-  // 🔥 FUNÇÃO PARA ADICIONAR NOVA CATEGORIA (opcional)
-  // async function addCategory(categoryName: string) {
-  //   "use server"
-  //   // Aqui você pode implementar lógica para salvar em uma tabela separada
-  //   console.log("Nova categoria:", categoryName)
-  // }
+  async function addCategory(categoryName: string) {
+    "use server"
+    console.log("Nova categoria a ser salva:", categoryName)
+    // Aqui futuramente você pode salvar em uma tabela 'categories'
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -72,7 +69,7 @@ export default async function NewProductPage() {
         <ProductClientWrapper 
           categories={categories}
           onSubmit={createProduct}
-          // onAddCategory={addCategory} // ← Descomente se quiser salvar em tabela separada
+          onAddCategory={addCategory}
         />
       </div>
     </div>

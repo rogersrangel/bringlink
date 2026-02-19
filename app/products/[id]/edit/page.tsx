@@ -1,13 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { notFound } from "next/navigation"
-import { ProductFormWrapper } from "@/app/products/[id]/edit/ProductFormWrapper"
+import { ProductFormWrapper } from "./ProductFormWrapper"
 import { revalidatePath } from "next/cache"
 
 interface EditProductPageProps {
-  params: Promise<{
-    id: string
-  }>
+  params: Promise<{ id: string }>
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
@@ -15,27 +13,17 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect("/login")
-  }
+  if (!user) redirect("/login")
 
-  // Buscar o produto pelo ID
   const { data: product, error } = await supabase
     .from('products')
     .select('*')
     .eq('id', id)
     .single()
 
-  if (error || !product) {
-    notFound()
-  }
+  if (error || !product) notFound()
+  if (product.user_id !== user.id) redirect("/products")
 
-  // Verificar se o produto pertence ao usuário
-  if (product.user_id !== user.id) {
-    redirect("/products")
-  }
-
-  // Buscar categorias existentes do usuário
   const { data: products } = await supabase
     .from('products')
     .select('category')
@@ -48,10 +36,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      redirect("/login")
-    }
+    if (!user) redirect("/login")
 
     const originalPrice = parseFloat(formData.original_price)
     const discountedPrice = parseFloat(formData.discounted_price)
@@ -77,18 +62,22 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     }
   }
 
+  async function addCategory(categoryName: string) {
+    "use server"
+    console.log("Nova categoria na edição:", categoryName)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <h1 className="text-3xl font-bold mb-2">Editar Produto</h1>
-        <p className="text-gray-600 mb-8">
-          Atualize as informações do produto
-        </p>
+        <p className="text-gray-600 mb-8">Atualize as informações do produto</p>
 
         <ProductFormWrapper 
           product={product}
           categories={categories}
           onSubmit={updateProduct}
+          onAddCategory={addCategory}
         />
       </div>
     </div>
