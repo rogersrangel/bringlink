@@ -90,7 +90,7 @@ function extractAmazon($: any, product: any) {
   return product
 }
 
-// 🟦 MERCADO LIVRE - VERSÃO FINAL ROBUSTA
+// 🟦 MERCADO LIVRE - VERSÃO FINAL E DEFINITIVA
 function extractMercadoLivre($: any, product: any) {
   console.log('🔍 Extraindo Mercado Livre...')
   
@@ -103,79 +103,96 @@ function extractMercadoLivre($: any, product: any) {
   product.image = $('meta[property="og:image"]').attr('content') ||
                   $('.ui-pdp-gallery__figure img').attr('src')
 
-  // 🔥 ESTRATÉGIA FINAL: Encontrar o PREÇO PRINCIPAL da página
-  let mainPrice: number | null = null
+  // 🔥 ESTRATÉGIA: Encontrar o PREÇO PROMOCIONAL (com desconto)
+  let discountedPrice: number | null = null
+  let originalPrice: number | null = null
 
-  // 1. Primeiro, tenta o seletor específico do preço à vista (mais confiável)
-  const cashPriceElement = $('.andes-money-amount.ui-pdp-price__part').first()
-  const cashPriceText = cashPriceElement.find('.andes-money-amount__fraction').first().text()
-  
-  if (cashPriceText) {
-    const cleanPrice = cashPriceText.replace(/\./g, '')
-    let price = parseFloat(cleanPrice)
-    
-    const centsElement = cashPriceElement.find('.andes-money-amount__cents').first()
-    if (centsElement.length) {
-      const cents = centsElement.text()
-      price = parseFloat(cleanPrice + '.' + cents)
-    }
-    mainPrice = price
-    console.log(`💰 Preço à vista encontrado: ${mainPrice}`)
-  }
-
-  // 2. Se não encontrou, tenta o elemento de preço que está visível na página
-  if (!mainPrice) {
-    const visiblePriceElement = $('.ui-pdp-price__second-line .andes-money-amount__fraction').first()
-    if (visiblePriceElement.length) {
-      const visiblePriceText = visiblePriceElement.text().replace(/\./g, '')
-      mainPrice = parseFloat(visiblePriceText)
-      console.log(`💰 Preço visível encontrado: ${mainPrice}`)
-    }
-  }
-
-  // 3. Fallback: coleta todos os preços e filtra os que fazem sentido
-  if (!mainPrice) {
-    let allPrices: number[] = []
-    $('.andes-money-amount__fraction').each((i: number, el: any) => {
-      const priceText = $(el).text().replace(/\./g, '')
-      const price = parseFloat(priceText)
-      if (!isNaN(price) && price > 0) {
-        allPrices.push(price)
-      }
-    })
-
-    if (allPrices.length > 0) {
-      // Remove outliers (preços muito baixos ou muito altos)
-      const sortedPrices = allPrices.sort((a, b) => a - b)
-      const reasonablePrices = sortedPrices.filter(p => p > 10 && p < 10000) // Filtra preços irreais
+  // 1. Primeiro, procura especificamente pelo preço que tem o selo de desconto
+  // O seletor '.ui-pdp-price__second-line' geralmente contém o preço promocional
+  const promoPriceElement = $('.ui-pdp-price__second-line .andes-money-amount').first()
+  if (promoPriceElement.length) {
+    const priceText = promoPriceElement.find('.andes-money-amount__fraction').first().text()
+    if (priceText) {
+      const cleanPrice = priceText.replace(/\./g, '')
+      let price = parseFloat(cleanPrice)
       
-      if (reasonablePrices.length > 0) {
-        // Pega o menor preço razoável (geralmente o à vista)
-        mainPrice = reasonablePrices[0]
-        console.log(`💰 Menor preço razoável encontrado: ${mainPrice}`)
-        console.log(`   (de um total de ${allPrices.length} preços na página)`)
+      const centsElement = promoPriceElement.find('.andes-money-amount__cents').first()
+      if (centsElement.length) {
+        const cents = centsElement.text()
+        price = parseFloat(cleanPrice + '.' + cents)
       }
+      discountedPrice = price
+      console.log(`💰 Preço promocional encontrado: ${discountedPrice}`)
     }
   }
 
-  // 4. Define os preços no produto
-  if (mainPrice) {
-    product.discounted_price = mainPrice
-    product.original_price = mainPrice
-  }
-
-  // 5. Tenta encontrar preço original (tachado) separadamente
-  const originalElement = $('.andes-money-amount--previous .andes-money-amount__fraction')
-  if (originalElement.length) {
-    const originalText = originalElement.text().replace(/\./g, '')
-    let originalPrice = parseFloat(originalText)
+  // 2. Depois, procura o preço original (tachado ou "De:")
+  const originalPriceElement = $('.andes-money-amount--previous .andes-money-amount__fraction')
+  if (originalPriceElement.length) {
+    const originalText = originalPriceElement.text().replace(/\./g, '')
+    let original = parseFloat(originalText)
     
     const originalCents = $('.andes-money-amount--previous .andes-money-amount__cents').text()
     if (originalCents) {
-      originalPrice = parseFloat(originalText + '.' + originalCents)
+      original = parseFloat(originalText + '.' + originalCents)
     }
-    product.original_price = originalPrice
-    console.log(`💰 Preço original (tachado) encontrado: ${originalPrice}`)
+    originalPrice = original
+    console.log(`💰 Preço original (de comparação) encontrado: ${originalPrice}`)
+  }
+
+  // 3. Se não encontrou o promocional, tenta o primeiro preço que não seja o original
+  if (!discountedPrice) {
+    $('.andes-money-amount.ui-pdp-price__part').each((i: number, el: any) => {
+      // Pula o elemento que é o preço original (se já identificamos)
+      if (originalPriceElement.length && $(el).hasClass('andes-money-amount--previous')) {
+        return
+      }
+      
+      const priceText = $(el).find('.andes-money-amount__fraction').first().text()
+      if (priceText) {
+        const cleanPrice = priceText.replace(/\./g, '')
+        let price = parseFloat(cleanPrice)
+        
+        const centsElement = $(el).find('.andes-money-amount__cents').first()
+        if (centsElement.length) {
+          const cents = centsElement.text()
+          price = parseFloat(cleanPrice + '.' + cents)
+        }
+        
+        // Se o preço for menor que o original (caso tenha encontrado), é o promocional
+        if (originalPrice && price < originalPrice) {
+          discountedPrice = price
+          console.log(`💰 Preço promocional (menor que original) encontrado: ${discountedPrice}`)
+          return false // break do each
+        } else if (!originalPrice) {
+          // Se não tem original, pega o primeiro preço que não seja muito baixo
+          if (price > 10) { // Filtra valores irreais como 14,43 de parcela
+            discountedPrice = price
+            console.log(`💰 Primeiro preço razoável encontrado: ${discountedPrice}`)
+            return false
+          }
+        }
+      }
+    })
+  }
+
+  // 4. Define os preços no produto
+  if (discountedPrice) {
+    product.discounted_price = discountedPrice
+    product.original_price = originalPrice || discountedPrice
+  } else {
+    // Fallback para caso tudo falhe
+    console.log('⚠️ Nenhum preço encontrado, usando fallback')
+    const allPriceTexts: number[] = []
+    $('.andes-money-amount__fraction').each((i: number, el: any) => {
+      const val = parseFloat($(el).text().replace(/\./g, ''))
+      if (!isNaN(val) && val > 0) allPriceTexts.push(val)
+    })
+    if (allPriceTexts.length > 0) {
+      const sorted = allPriceTexts.sort((a, b) => a - b)
+      product.discounted_price = sorted[0] // Pega o menor preço
+      product.original_price = sorted[sorted.length - 1] // Pega o maior preço
+    }
   }
 
   return product
